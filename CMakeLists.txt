@@ -23,3 +23,4 @@ FetchContent_MakeAvailable(SFML)
 
 add_executable(Main app/main.cpp)
 target_link_libraries(Main PRIVATE sfml-graphics)
+target_include_directories(Main PUBLIC include)
