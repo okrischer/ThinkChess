@@ -1,12 +1,29 @@
 #include <SFML/Graphics.hpp>
 #include "pieces.hpp"
 #include <iostream>
+#include <utility>
 #include <vector>
-using namespace std;
 
-vector<vector<Piece*>> board(8, vector<Piece*>(8));
+std::vector<std::vector<Piece*>> board(8, std::vector<Piece*>(8));
+std::vector<std::vector<bool>> validMoves(8, std::vector<bool>(8, 0));
 
-void reset_board(vector<vector<Piece*>>& bd) {
+void setValidMoves(std::vector<std::vector<Piece*>>& bd, Piece* pc) {
+  if (pc) validMoves = pc->validMoves(bd);
+}
+
+std::pair<int, int> getField(int x, int y) {
+  int fx = x / 80;
+  int fy = y / 80;
+  auto field = std::make_pair(fy, fx);
+  return field;
+}
+
+void reset_board(std::vector<std::vector<Piece*>>& bd) {
+  for (auto rank : bd) {
+    for (auto piece : rank) {
+      delete piece;
+    }
+  }
   // rank 8 (black)
   bd[0][0] = new Rook(0,0,0);
   bd[0][1] = new Knight(0,0,1);
@@ -49,7 +66,7 @@ int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
   auto window = sf::RenderWindow{ {1000u, 640u}, "Think Chess", sf::Style::Default, settings };
-  window.setFramerateLimit(1);
+  window.setFramerateLimit(10);
 
   reset_board(board);
 
@@ -108,6 +125,9 @@ int main() {
   sf::Sprite bp;
   bp.setTexture(figures);
   bp.setTextureRect(sf::IntRect(300,60,60,60));
+  
+  sf::CircleShape valid(20.f);
+  valid.setFillColor(sf::Color(0, 250, 0, 100));
 
   // begin animation
   while (window.isOpen()) {
@@ -115,7 +135,23 @@ int main() {
       if (event.type == sf::Event::Closed) {
         window.close();
       }
-    }
+      // mouse button pressed
+      if (event.type == sf::Event::MouseButtonPressed) {
+        if (event.mouseButton.button == sf::Mouse::Right) {
+          std::cout << "the right button was pressed\n";
+          std::pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+          setValidMoves(board, board[f.first][f.second]);
+        }
+      }
+      // mouse button released
+      if (event.type == sf::Event::MouseButtonReleased) {
+        if (event.mouseButton.button == sf::Mouse::Right) {
+          std::cout << "the right button was released\n";
+          validMoves = std::vector<std::vector<bool>>(8, std::vector<bool>(8, 0));
+        }
+      }
+
+    } // end event-loop
 
     // draw board
     window.draw(bs);
@@ -125,7 +161,7 @@ int main() {
         if (board[row][col]) {
           auto piece = board[row][col];
           sf::Sprite pc;
-          switch (piece->get_type()) {
+          switch (piece->getType()) {
           case 'k':
             piece->isWhite() ? pc = wk : pc = bk;
             break;
@@ -147,6 +183,15 @@ int main() {
           }
           pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
           window.draw(pc);
+        }
+      }
+    }
+    // draw valid moves
+    for (int row = 0; row < 8; row++) {
+      for (int col = 0; col < 8; col++) {
+        if (validMoves[row][col]) {
+          valid.setPosition(col*80.f + 20.f, row*80.f + 20.f);
+          window.draw(valid);
         }
       }
     }

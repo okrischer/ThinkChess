@@ -1,152 +1,238 @@
+#pragma once
+#include <vector>
+
 // public interface for pieces
 class Piece {
 public:
   virtual ~Piece() {}
-  virtual char get_type() = 0;
+  virtual char getType() = 0;
+  virtual char getValue() = 0;
   virtual bool isWhite() = 0;
-  virtual void move(int r, int c) = 0;
+  virtual bool isCaptured() = 0;
+  virtual std::vector<std::vector<bool>> validMoves(std::vector<std::vector<Piece*>>& bd) = 0;
 };
 
 class King : public Piece {
 public:
-  char type;
-  bool white;
-  short value;
-  bool captured;
-  int row;
-  int col;
-
+  ~King() {}
   King(bool w, int r, int c) : type{'k'}, white{w}, value{0},
                               captured{false}, row{r}, col{c} {}
 
-  char get_type() override {
+  char getType() override {
     return type;
+  }
+
+  char getValue() override {
+    return value;
   }
 
   bool isWhite() override {
     return white;
   }
 
-  void move(int r, int c) override {
+  bool isCaptured() override {
+    return captured;
   }
+
+  std::vector<std::vector<bool>> validMoves(std::vector<std::vector<Piece*>>& bd) override {
+    std::vector<std::vector<bool>> moves(8, std::vector<bool>(8, 0));
+    for (int r = 0; r < 8; r++) {
+      for (int c = 0; c < 8; c++) {
+        if (abs(r-row) <= 1 && abs(c-col) <= 1) {
+          auto piece = bd[r][c];
+          if (!piece || piece->isWhite() != this->isWhite())
+            moves[r][c] = 1;
+        }
+      }
+    }
+    return moves;
+  }
+
+private:
+  char type;
+  bool white;
+  short value;
+  bool captured;
+  int row;
+  int col;
 };
 
 class Queen : public Piece {
 public:
-  char type;
-  bool white;
-  short value;
-  bool captured;
-  int row;
-  int col;
-
+  ~Queen() {}
   Queen(bool w, int r, int c) : type{'q'}, white{w}, value{8},
                               captured{false}, row{r}, col{c} {}
 
-  char get_type() override {
+  char getType() override {
     return type;
+  }
+
+  char getValue() override {
+    return value;
   }
 
   bool isWhite() override {
     return white;
   }
 
-  void move(int r, int c) override {
+  bool isCaptured() override {
+    return captured;
   }
+
+  std::vector<std::vector<bool>> validMoves(std::vector<std::vector<Piece*>>& bd) override {
+    std::vector<std::vector<bool>> moves(8, std::vector<bool>(8, 0));
+    return moves;
+  }
+
+private:
+  char type;
+  bool white;
+  short value;
+  bool captured;
+  int row;
+  int col;
 };
 
 class Rook : public Piece {
 public:
-  char type;
-  bool white;
-  short value;
-  bool captured;
-  int row;
-  int col;
-
+  ~Rook() {}
   Rook(bool w, int r, int c) : type{'r'}, white{w}, value{4},
                              captured{false}, row{r}, col{c} {}
 
-  char get_type() override {
+  char getType() override {
     return type;
+  }
+
+  char getValue() override {
+    return value;
   }
 
   bool isWhite() override {
     return white;
   }
 
-  void move(int r, int c) override {
+  bool isCaptured() override {
+    return captured;
   }
+
+  std::vector<std::vector<bool>> validMoves(std::vector<std::vector<Piece*>>& bd) override {
+    std::vector<std::vector<bool>> moves(8, std::vector<bool>(8, 0));
+    return moves;
+  }
+
+private:
+  char type;
+  bool white;
+  short value;
+  bool captured;
+  int row;
+  int col;
 };
 
 class Knight : public Piece {
 public:
-  char type;
-  bool white;
-  short value;
-  bool captured;
-  int row;
-  int col;
-
+  ~Knight() {}
   Knight(bool w, int r, int c) : type{'n'}, white{w}, value{3},
                                captured{false}, row{r}, col{c} {}
 
-  char get_type() override {
+  char getType() override {
     return type;
+  }
+
+  char getValue() override {
+    return value;
   }
 
   bool isWhite() override {
     return white;
   }
 
-  void move(int r, int c) override {
+  bool isCaptured() override {
+    return captured;
   }
+
+  std::vector<std::vector<bool>> validMoves(std::vector<std::vector<Piece*>>& bd) override {
+    std::vector<std::vector<bool>> moves(8, std::vector<bool>(8, 0));
+    return moves;
+  }
+
+private:
+  char type;
+  bool white;
+  short value;
+  bool captured;
+  int row;
+  int col;
 };
 
 class Bishop : public Piece {
 public:
-  char type;
-  bool white;
-  short value;
-  bool captured;
-  int row;
-  int col;
-
+  ~Bishop() {}
   Bishop(bool w, int r, int c) : type{'b'}, white{w}, value{3},
                                captured{false}, row{r}, col{c} {}
 
-  char get_type() override {
+  char getType() override {
     return type;
+  }
+
+  char getValue() override {
+    return value;
   }
 
   bool isWhite() override {
     return white;
   }
 
-  void move(int r, int c) override {
+  bool isCaptured() override {
+    return captured;
   }
+
+  std::vector<std::vector<bool>> validMoves(std::vector<std::vector<Piece*>>& bd) override {
+    std::vector<std::vector<bool>> moves(8, std::vector<bool>(8, 0));
+    return moves;
+  }
+
+private:
+  char type;
+  bool white;
+  short value;
+  bool captured;
+  int row;
+  int col;
 };
 
 class Pawn : public Piece {
 public:
-  char type;
-  bool white;
-  short value;
-  bool captured;
-  int row;
-  int col;
-
+  ~Pawn() {}
   Pawn(bool w, int r, int c) : type{'p'}, white{w}, value{1},
                              captured{false}, row{r}, col{c} {}
 
-  char get_type() override {
+  char getType() override {
     return type;
+  }
+
+  char getValue() override {
+    return value;
   }
 
   bool isWhite() override {
     return white;
   }
 
-  void move(int r, int c) override {
+  bool isCaptured() override {
+    return captured;
   }
+
+  std::vector<std::vector<bool>> validMoves(std::vector<std::vector<Piece*>>& bd) override {
+    std::vector<std::vector<bool>> moves(8, std::vector<bool>(8, 0));
+    return moves;
+  }
+
+private:
+  char type;
+  bool white;
+  short value;
+  bool captured;
+  int row;
+  int col;
 };
