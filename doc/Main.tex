@@ -1,0 +1,40 @@
+\documentclass{scrreprt}
+\KOMAoptions{parskip=half*}
+\usepackage{mathtools}
+\numberwithin{equation}{chapter}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=gray,
+  urlcolor=purple
+}
+\usepackage[chapter,newfloat=true]{minted}
+\usemintedstyle[cpp]{autumn}
+\newminted[cpp]{cpp}{bgcolor=bgc}
+
+\begin{document}
+\definecolor{bgc}{rgb}{0.95,0.98,0.95}
+\title{ThinkChess\textsuperscript{++}}
+\author{Oliver Krischer}
+\subtitle{Learn to program a chess app with C\textsuperscript{++} and to play chess along the way.}
+\maketitle
+\begin{abstract}
+  If you have ever wondered how to program a simple chess app for youself,
+  this tutorial is the right point to start.
+  We are going to explore the machanics of the game, how to maintain and display the game status,
+  and how to find a good next move.
+
+  To that goal we we'll also dive into data structures (\emph{lists, trees, graphs}),
+  and explore some basic search algorithms based on these data structures.
+
+  After working through this tutorial, you will not only have a running chess app,
+  but also will be proficient in playing chess at an amateur level. 
+
+  The souce code of the program and the documentation is available at
+  \href{https://github.com/okrischer/ThinkChess}{github}.
+\end{abstract}
+\tableofcontents
+
+\input{Gui.tex}
+
+\end{document}

@@ -1,2 +1,15 @@
 .cache/
 build/
+doc/_minted-Main/
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb*
+*.fls
+*.gz
+*.log
+*.pdf
+*.swp
+*.toc
+*.xml

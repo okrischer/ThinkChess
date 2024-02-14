@@ -21,6 +21,6 @@ FetchContent_Declare(SFML
   GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(Main app/main.cpp)
-target_link_libraries(Main PRIVATE sfml-graphics)
-target_include_directories(Main PUBLIC include)
+add_executable(ThinkChess app/main.cpp)
+target_link_libraries(ThinkChess PRIVATE sfml-graphics)
+target_include_directories(ThinkChess PUBLIC include)

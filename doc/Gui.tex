@@ -1,0 +1,40 @@
+\chapter{Implementing the GUI}
+
+I've chosen the \emph{Simple and Fast Multimedia Library}
+\href{https://www.sfml-dev.org/index.php}{SFML} for creating the graphical user interface
+of the app.
+It lives up to its name and is available on all major platforms and programming languages.
+
+In this chapter we'll learn how to display the board and the chess pieces on it.
+In order to show valid moves for each piece, we will also learn the basic rules of the game.
+
+I'm using \href{https://cmake.org/}{CMake} for building the C\textsuperscript{++} code,
+and the SFML CMake project template, which will build the SFML libraries.
+So you will need to have the following components installed on your machine:
+
+\begin{itemize}
+  \item a decent C\textsuperscript{++} compiler (any of the major compilers will do)
+  \item the \emph{git} tool
+  \item the \emph{cmake} tool
+  \item the required system packages for
+    \href{https://www.sfml-dev.org/tutorials/2.6/start-cmake.php}{SFML}
+\end{itemize}
+ 
+On a linux system, all those components can be installed with your systems package manager
+(e.g. with \texttt{apt-get} on Ubuntu).
+The same is true for Mac OS, just use the included \texttt{clang++} compiler and install
+missing components with \href{https://brew.sh/}{homebrew}:
+\texttt{<brew install git cmake sfml>}.
+
+When everything is in place, just clone my repository with e.g.\\
+\texttt{<git clone https://github.com/okrischer/ThinkChess.git>} and execute\\
+\texttt{<cmake -B build>} from the root folder of your local copy.\\
+If everything went well, change to the \texttt{build} folder and execute
+\texttt{<cmake --build .>} and voila, you have a running app, which you can start with
+\texttt{<./ThinkChess>}.
+
+\section{Displaying the board and the pieces}
+
+
+\section{Showing valid moves}
+
