@@ -5,7 +5,7 @@
 #include <vector>
 
 std::vector<std::vector<Piece*>> board(8, std::vector<Piece*>(8));
-std::vector<std::vector<bool>> validMoves(8, std::vector<bool>(8, 0));
+std::vector<std::vector<short>> validMoves(8, std::vector<short>(8, 0));
 
 void setValidMoves(std::vector<std::vector<Piece*>>& bd, Piece* pc) {
   if (pc) validMoves = pc->validMoves(bd);
@@ -25,7 +25,7 @@ void reset_board(std::vector<std::vector<Piece*>>& bd) {
     }
   }
   // rank 8 (black)
-  bd[0][0] = new Rook(0,0,0);
+  bd[5][3] = new Rook(0,5,3);
   bd[0][1] = new Knight(0,0,1);
   bd[0][2] = new Bishop(0,0,2);
   bd[0][3] = new Queen(0,0,3);
@@ -34,14 +34,14 @@ void reset_board(std::vector<std::vector<Piece*>>& bd) {
   bd[0][6] = new Knight(0,0,6);
   bd[0][7] = new Rook(0,0,7);
   // rank 7 (black)
-  bd[1][0] = new Pawn(0,1,0);
+  bd[3][0] = new Pawn(0,3,0);
   bd[1][1] = new Pawn(0,1,1);
-  bd[1][2] = new Pawn(0,1,2);
-  bd[1][3] = new Pawn(0,1,3);
-  bd[1][4] = new Pawn(0,1,4);
+  bd[2][2] = new Pawn(0,2,2);
+  bd[2][3] = new Pawn(0,2,3);
+  bd[3][4] = new Pawn(0,3,4);
   bd[1][5] = new Pawn(0,1,5);
-  bd[1][6] = new Pawn(0,1,6);
-  bd[1][7] = new Pawn(0,1,7);
+  bd[2][6] = new Pawn(0,2,6);
+  bd[3][7] = new Pawn(0,3,7);
   // rank 2 (white)
   bd[6][0] = new Pawn(1,6,0);
   bd[6][1] = new Pawn(1,6,1);
@@ -52,13 +52,13 @@ void reset_board(std::vector<std::vector<Piece*>>& bd) {
   bd[6][6] = new Pawn(1,6,6);
   bd[6][7] = new Pawn(1,6,7);
   // rank 1 (white)
-  bd[7][0] = new Rook(1,7,0);
+  bd[3][3] = new Rook(1,3,3);
   bd[7][1] = new Knight(1,7,1);
   bd[7][2] = new Bishop(1,7,2);
-  bd[7][3] = new Queen(1,7,3);
+  bd[2][5] = new Queen(1,2,5);
   bd[7][4] = new King(1,7,4);
-  bd[7][5] = new Bishop(1,7,5);
-  bd[7][6] = new Knight(1,7,6);
+  bd[3][5] = new Bishop(1,3,5);
+  bd[5][5] = new Knight(1,5,5);
   bd[7][7] = new Rook(1,7,7);
 }
 
@@ -127,7 +127,7 @@ int main() {
   bp.setTextureRect(sf::IntRect(300,60,60,60));
   
   sf::CircleShape valid(20.f);
-  valid.setFillColor(sf::Color(0, 250, 0, 100));
+  valid.setFillColor(sf::Color(100, 200, 0, 100));
 
   // begin animation
   while (window.isOpen()) {
@@ -138,7 +138,6 @@ int main() {
       // mouse button pressed
       if (event.type == sf::Event::MouseButtonPressed) {
         if (event.mouseButton.button == sf::Mouse::Right) {
-          std::cout << "the right button was pressed\n";
           std::pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
           setValidMoves(board, board[f.first][f.second]);
         }
@@ -146,8 +145,7 @@ int main() {
       // mouse button released
       if (event.type == sf::Event::MouseButtonReleased) {
         if (event.mouseButton.button == sf::Mouse::Right) {
-          std::cout << "the right button was released\n";
-          validMoves = std::vector<std::vector<bool>>(8, std::vector<bool>(8, 0));
+          validMoves = std::vector<std::vector<short>>(8, std::vector<short>(8, 0));
         }
       }
 
@@ -189,10 +187,12 @@ int main() {
     // draw valid moves
     for (int row = 0; row < 8; row++) {
       for (int col = 0; col < 8; col++) {
-        if (validMoves[row][col]) {
+        if (validMoves[row][col] > 0) {
           valid.setPosition(col*80.f + 20.f, row*80.f + 20.f);
+          if (validMoves[row][col] > 1) valid.setFillColor(sf::Color(0, 200, 0, 200));
           window.draw(valid);
         }
+        valid.setFillColor(sf::Color(100, 200, 0, 100));
       }
     }
 
