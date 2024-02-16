@@ -65,7 +65,7 @@ void reset_board(std::vector<std::vector<Piece*>>& bd) {
 int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
-  auto window = sf::RenderWindow{ {1000u, 640u}, "Think Chess", sf::Style::Default, settings };
+  auto window = sf::RenderWindow{ {640u, 640u}, "Think Chess++", sf::Style::Default, settings };
   window.setFramerateLimit(10);
 
   reset_board(board);
@@ -127,7 +127,6 @@ int main() {
   bp.setTextureRect(sf::IntRect(300,60,60,60));
   
   sf::CircleShape valid(20.f);
-  valid.setFillColor(sf::Color(100, 200, 0, 100));
 
   // begin animation
   while (window.isOpen()) {
@@ -190,9 +189,9 @@ int main() {
         if (validMoves[row][col] > 0) {
           valid.setPosition(col*80.f + 20.f, row*80.f + 20.f);
           if (validMoves[row][col] > 1) valid.setFillColor(sf::Color(0, 200, 0, 200));
+          else valid.setFillColor(sf::Color(100, 200, 0, 100));
           window.draw(valid);
         }
-        valid.setFillColor(sf::Color(100, 200, 0, 100));
       }
     }
 

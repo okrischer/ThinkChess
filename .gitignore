@@ -9,6 +9,7 @@ doc/_minted-Main/
 *.fls
 *.gz
 *.log
+*.out
 *.pdf
 *.swp
 *.toc
