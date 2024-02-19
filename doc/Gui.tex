@@ -87,8 +87,9 @@ three steps:
     actually displayed.
 \end{enumerate}
 
-But we don't have anything to draw yet; let's change this by adding a chessboard
-within the main function, just before entering the game loop (9):
+\subsection{The board}
+We don't have anything to draw yet; let's change this by adding a chessboard
+within the main function, just before entering the game loop:
 
 \begin{cpp*}{linenos}
   sf::Texture bi;
@@ -106,7 +107,8 @@ If you run the app now, you would see an empty chess board:
 \includegraphics[width=.5\linewidth]{../img/emptyBoard.jpg}
 \end{center}
 
-Not that interesting, so we're going to add the chess pieces at their initial position.
+\subsection{The pieces}
+Not that interesting so far, so we're going to add the chess pieces at their initial position.
 For that, let's introduce the pieces at first: they come in two colors, \emph{white}
 and \emph{black}, each for one player, and they are called as follows
 (from left to right in the image below):
@@ -115,33 +117,38 @@ and \emph{black}, each for one player, and they are called as follows
 \includegraphics[width=.5\linewidth]{../img/figures.png}
 \end{center}
 
-\begin{enumerate}
-  \item \emph{King} [-]
-  \item \emph{Queen} [8]
-  \item \emph{Bishop} [3]
-  \item \emph{Knight} [3]
-  \item \emph{Rook} [4]
-  \item \emph{Pawn} [1]
-\end{enumerate}
+\begin{center}
+\begin{tabular}{l | c | c | c | c | c | c}
+  \hline
+  Piece & King & Queen & Bishop & Knight & Rook & Pawn \\
+  quantity & 1 & 1 & 2 & 2 & 2 & 8 \\
+  value  & - & 8 & 3 & 3 & 4 & 1 \\
+  \hline
+\end{tabular}
+\end{center}
 
 Every piece, except the king, has a value assigned to it; this is just by convention and
 not necessary for the original game play.
-The value shows the strength of the piece and serves for a basic evaluation of each players
+The value indicates the strength of the piece and serves for a basic evaluation of each players
 position during the game.
-So, the \emph{Queen} is the most powerful piece in the game, followed by the \emph{Rook}, and
-the \emph{Bishop} and the \emph{Knight}, both of equal value.
+
+The \emph{Queen} is the most powerful piece in the game, followed by the \emph{Rook};
+those two are also called \emph{major pieces}.
+Then we have the \emph{Bishop} and the \emph{Knight}, both of equal value, building the
+group of \emph{minor pieces}.
 The least worthy piece is the \emph{Pawn}.
 
 But why has the \emph{King} no value assigned?\\
-The goal of the game is to put your opponents \emph{King} in a position, where it is exposed
-to a thread of beeing captured; this position is called \emph{check}.
-If the threatened \emph{King} cannot respond to the \emph{check} in the very next move,
-the game is over, and your opponent has lost the game.
-This position is called \emph{checkmate}.
-So, the \emph{King} is never actually captured, it stays on the board until the end of the game.
-Because of this, it doesn't make any sense to give him a value for evaluating a players position. 
+The goal of the game is to put your opponents \emph{King} in a position, where it is attacked
+by any of your own pieces (an attack is the threat to capture a piece with the next move).
+We call this position \emph{check}.\\
+If a player cannot respond to a \emph{check} in the very next move (i.e. defend his \emph{King}),
+the game is over, and that player has lost the game.
+We call this position \emph{checkmate}.\\
+Thus, the \emph{King} is never actually captured, it stays on the board until the end of the game.
+With that, it doesn't make any sense to give it a value for evaluating a players position. 
 
-We'll cover the movement of the pieces in great detail in the next section~\ref{sec:validmoves}.
+We'll cover the movement of the pieces in great detail in the next section~\ref{subsec:validmoves}.
 But, for now, let's concentrate on how to display the pieces:
 
 \begin{cpp*}{linenos}
@@ -172,19 +179,20 @@ every square on the board has a size of $80 \times 80$ pixels.
 That allows us to place the sprites evenly on the board with an offeset of 10 pixels to the
 boundary of each square.
 
+\subsection{Keeping track of the pieces}
 In order to actually place the pieces on the board, we need a data structure, being able to
 keep track of the 64 squares.
 As it turns out, an $8 \times 8$ vector matrix is a good fit for that:
 
 \begin{cpp}
-std::vector<std::vector<Piece*>> board(8, std::vector<Piece*>(8));
+vector<vector<Piece*>> board(8, vector<Piece*>(8));
 \end{cpp}
 
 You could have used any type of vector matrix for keeping track of the pieces,
 but I've chosen an \emph{object-oriented} approach:
-every piece is represented by a raw pointer (indicated with the *) to an instance of the
-\mintinline{cpp}{class Piece}.
-That allows for greater flexibility in implementing the game logic: instead of putting
+every piece is represented by a raw pointer (indicated with the *) to an instance of the type
+\mintinline{cpp}{Piece}.
+That allows for greater flexibility implementing the game logic: instead of putting
 the game logic in the main file, we are going to implement it in a new file \texttt{app/pieces.cpp}.
 
 So, let's have a look on how \mintinline{cpp}{Piece} is actually implemented:
@@ -193,6 +201,7 @@ So, let's have a look on how \mintinline{cpp}{Piece} is actually implemented:
 #pragma once
 #include <vector>
 
+// public interface for pieces
 class Piece {
 public:
   virtual ~Piece() {}
@@ -200,8 +209,8 @@ public:
   virtual char getValue() = 0;
   virtual bool isWhite() = 0;
   virtual bool isCaptured() = 0;
-  virtual std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) = 0;
+  virtual bool isValid(std::vector<std::vector<Piece*>>& bd,
+                       int r, int c) = 0;
 };
 \end{cpp}
 
@@ -234,9 +243,8 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
-
-  std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) override;
+  bool isValid(std::vector<std::vector<Piece*>>& bd,
+               int r, int c) override;
 
 private:
   char type;
@@ -249,12 +257,12 @@ private:
 \end{cpp*}
 
 The other pieces are implemented likewise; the only difference between them so far is the
-implementation of the member function \mintinline{cpp}{validMoves()} (12-13).
-I decided to leave the class definitions in the header file, and to move only those different
-implementations to the file \texttt{app/pieces.cpp}.
-We'll study these implementations in the next section~\ref{sec:validmoves}.
+implementation of the member function \mintinline{cpp}{isValid} (11-12).
+I decided to leave all the class definitions in the header file, and moved only the
+implementation for \mintinline{cpp}{isValid} to the file \texttt{app/pieces.cpp}.
+We'll study these implementations in the next section~\ref{subsec:validmoves}.
 
-For now, we are only interested in the class definitions:\\
+For now, we are only interested in the type definitions:\\
 each of them is derived from \mintinline{cpp}{class Piece} (1) and has a \emph{destructor} (3),
 which will be called by the compiler when an instance of the class is destroyed.
 This will happen automatically, whenever an \emph{automatic} variable gets out of scope.
@@ -262,17 +270,17 @@ But, if a reference to an instance was created explicitly (using the keyword \mi
 we have to \mintinline{cpp}{delete} that object explicitly in order to avoid \emph{memory leaks}.
 
 Next, we have the \emph{constructor} (4-5):\\
-it initializes the instance with its type (which we need only for drawing the correct sprite),
+it initializes a new instance with its type (which we need only for drawing the correct sprite),
 the color of the piece (white or black), its value, and the current position
 of the piece (the row and column of the piece in the board matrix).
 
-The following member functions (6-10) are just \emph{getters} to retrieve the
+The following member functions (7-10) are just \emph{getters} to retrieve the
 \mintinline{cpp}{private} member types.
 
 With the derived \mintinline{cpp}{Piece} types in place, we can initially fill the board matrix:
 
 \begin{cpp}
-void reset_board(std::vector<std::vector<Piece*>>& bd) {
+void reset_board(vector<vector<Piece*>>& bd) {
   for (auto rank : bd) {
     for (auto piece : rank) {
       delete piece;
@@ -333,6 +341,7 @@ The rows of a chessboard are called \emph{ranks}, while the colums are called
 \emph{files}.
 The ranks are indicated by the numbers 1 to 8, whereas the files are indicated by the letters
 \texttt{a} to \texttt{h}, both starting at the lower left square (the dark field \texttt{a1}):
+\begin{samepage}
 \begin{verbatim}
 8 . . . . . . . .
 7 . . . . . . . .
@@ -358,12 +367,14 @@ With the initialization code above, the pieces will be placed like so on the boa
 1 R N B Q K B N R
   a b c d e f g h
 \end{verbatim}
+\end{samepage}
 
 Observe that we abbreviate the \emph{Knight} with the letter \texttt{N} to avoid confusion with
 the \emph{King}.
 So, the white \emph{Queen} is placed at \texttt{d1}, the black \emph{Queen} at \texttt{d8},
 and so forth.
 
+\subsection{Drawing the pieces}
 Now we can use the filled board matrix to actually draw the pieces within the game loop of the
 main function:
 
@@ -403,12 +414,14 @@ main function:
     }
 \end{cpp*}
 
-We are iterating over all elements of the matrix and get the piece at this position (7).
+We are iterating over all elements of the board matrix and get the piece at this position (7).
 Then we get the type and color of that piece by calling the appropriate getter functions
 (\mintinline{cpp}{getType(), isWhite()}) on it, and let a newly created sprite \texttt{pc}
 point to the corresponding figure sprite (9-28).
 Finally, we set the correct postion of the \texttt{pc} sprite on the board (29) and draw it
 to the current frame buffer (30).
+Observe that we have to use the pointer notation \texttt{->} (instead of a dot) for calling
+those functions on a piece, as the pieces were actually defined as pointers.
 
 And that's it: when you start the app now, you will see this screen, which shows a
 correct initialized chessboard with all pieces:
@@ -418,6 +431,405 @@ correct initialized chessboard with all pieces:
 \end{center}
 
 
-\section{Showing valid moves}\label{sec:validmoves}
+\section{Showing valid moves}
+The goal for this section is to show the valid moves for any given piece on the board.
+\subsection{Game mechanics}
 
+For reaching our goal, we first need a way to process user input.
+With SFML this is done inside the event loop of the main function:
 
+\begin{cpp*}{linenos}
+      // in event loop
+      // mouse button pressed
+      if (event.type == sf::Event::MouseButtonPressed) {
+        if (event.mouseButton.button == sf::Mouse::Right) {
+          pair<int, int> f =
+            getField(event.mouseButton.x, event.mouseButton.y);
+          setValidMoves(board, board[f.first][f.second]);
+        }
+      }
+      // mouse button released
+      if (event.type == sf::Event::MouseButtonReleased) {
+        if (event.mouseButton.button == sf::Mouse::Right) {
+          validMoves =
+            vector<vector<short>>(8, vector<short>(8, 0));
+        }
+      }
+\end{cpp*}
+
+Here, we check if a mouse button is pressed (3).
+If so, we check wether it's the right mouse button (4).
+Then, we get the coordinates of the corresponding field on the board (5-6), and
+fill another vector matrix with the computed valid moves for the piece under the
+mouse cursor (7).
+
+When the right mouse button is released (11-12), we reset the vector matrix of
+valid moves (13-14).
+
+In order for that to work, we need the following definitions in the main file,
+just before entering the main function:
+
+\begin{cpp*}{linenos}
+vector<vector<short>> validMoves(8, vector<short>(8, 0));
+
+void setValidMoves(vector<vector<Piece*>>& bd, Piece* pc) {
+  if (!pc) return;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      if (pc->isValid(bd, row, col)) {
+        auto current = bd[row][col];
+        if (!current) validMoves[row][col] = 1; 
+        else if (pc->isWhite() != current->isWhite())
+          validMoves[row][col] = 2;
+      }
+    }
+  }
+}
+
+pair<int, int> getField(int x, int y) {
+  int fx = x / 80;
+  int fy = y / 80;
+  auto field = make_pair(fy, fx);
+  return field;
+}
+
+\end{cpp*}
+
+The work is done inside the \mintinline{cpp}{setValidMoves} function (3):\\
+if there's no piece at the given coordinates, do nothing (4).\\
+Otherwise, iterate over all fields of the board (5-6), and check wether this position can be
+reached by the piece under the mouse cursor (7).\\
+If so, get the piece of the current search position (8).\\
+If there is no piece at this position, set this position to valid (9).\\
+Otherwise, check the color of the current piece and if it's different from the piece
+under the cursor (i.e. it can be captured), set it to valid with the special marker 2 (10).
+
+Our \emph{object-oriented} design is starting to pay off, as we don't need to define any
+game logic inside the main application file!
+
+The last thing to do, is to draw the content of the \mintinline{cpp}{validMoves}
+vector inside the main game loop (directly after drawing the pieces):
+
+\begin{cpp*}{linenos}
+  // before game loop
+  sf::CircleShape valid(20.f);
+
+    // inside game loop
+    // draw valid moves
+    for (int row = 0; row < 8; row++) {
+      for (int col = 0; col < 8; col++) {
+        if (validMoves[row][col] > 0) {
+          valid.setPosition(col*80.f + 20.f, row*80.f + 20.f);
+          if (validMoves[row][col] > 1)
+            valid.setFillColor(sf::Color(0, 200, 0, 200));
+          else valid.setFillColor(sf::Color(100, 200, 0, 100));
+          window.draw(valid);
+        }
+      }
+    }
+\end{cpp*}
+
+We iterate over all fields of the board (6-7), and if \mintinline{cpp}{validMoves} contains
+an entry at this position (8), we set the marker \mintinline{cpp}{valid} on the board (9).
+As an extra feature, we set the marker to a brighter color, if the entry is greater than 1
+(10-11).
+Finally, we draw the marker on the board (13).
+
+With that, all valid moves for a selected piece are displayed while pressing the right mouse button
+(with a green circular shape on the board). As soon as you release the mouse botton, the
+\mintinline{cpp}{validMoves} vector is reset, and there's nothing more to draw for the next frame.
+
+That's all for the mechanics of the game for now. Of course, we still need to implement the
+\mintinline{cpp}{isValid} function for every piece, which leads us to the next section.
+
+\subsection{Movement of the pieces}\label{subsec:validmoves}
+\subsubsection{The King}
+
+Let's start with the \emph{King}: it can move one step in any direction (on ranks, files and
+diagonals), provided the target field is not occopied by a piece of the same color:
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{../img/king.jpg}
+\end{center}
+
+If the target field is occopied by a piece of the other color (the black pawn on \texttt{f5}),
+the king can capture that piece, indicated by a brighter color of the green marker.
+
+But notice: the king is the only piece on the board that is not allowed to move to a field,
+where it is immediately attacked, as it would put
+itself into a \emph{check} position, and the game would be over.
+We're not taking this special case into account yet, so the field \texttt{g4},
+which is attacked by the black pawn, is still marked as valid.
+
+Besides that, there's also a special move involving the king, called \emph{castling},
+which we will cover in section ??.
+
+The function \mintinline{cpp}{isValid} for the king is implemented in the file
+\texttt{app/pieces.cpp}:
+
+\begin{cpp*}{linenos}
+#include "pieces.hpp"
+#include <vector>
+using namespace std;
+
+bool King::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = abs(r-row) <= 1 && abs(c-col) <= 1;
+  return valid;
+}
+\end{cpp*}
+
+First, we have to include the header file located at \texttt{include/pieces.hpp} (1),
+in order to make the type definitions of the pieces available.
+Observe, that we don't have to spell out the complete path to that file, thanks to these
+instructions of our \texttt{CMakeLists.txt} file:
+
+\begin{cpp}
+add_executable(ThinkChess app/main.cpp app/pieces.cpp)
+target_include_directories(ThinkChess PUBLIC include)
+\end{cpp}
+
+I've also decided to use the namespace definition for \mintinline{cpp}{std} (3), which I
+didn't in the header file.
+The reason for this is, that if I'd used it in the header file, it would also be defined in
+every implementation file including that header, leading to a potential namespace clash in the
+implementation file.
+
+The function \mintinline{cpp}{isValid} is actually defined as
+\mintinline{cpp}{King::isValid} (5), which defines the function as a member function of the
+type \mintinline{cpp}{King}.
+It returns \mintinline{cpp}{true} only if the given coordinates can be reached within one step.
+
+\subsubsection{The Knight}
+The \emph{Knight} is also a very special piece in one sense: it is the only piece, able to
+jump over any other piece on the board.
+It can move like so: either two fields on a rank and one on a file, or two on a file and one on
+a rank.
+That leads to an L shape for every move:
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{../img/knight.jpg}
+\end{center}
+
+Observe that a knight, placed on a dark field, can reach only light fields, and vice versa.
+
+Its \mintinline{cpp}{isValid} function is implemented like so:
+
+\begin{cpp}
+bool Knight::isValid(std::vector<std::vector<Piece*>>& bd,int r,int c) {
+  bool valid = (abs(r-row) == 1 && abs(c-col) == 2) ||
+               (abs(r-row) == 2 && abs(c-col) == 1);
+  return valid;
+}
+\end{cpp}
+
+\subsubsection{The Rook}
+The \emph{Rook} moves any distance on its current rank or file, but cannot jump over any other piece.
+Thus, its movement is limited by other pieces:
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{../img/rook.jpg}
+\end{center}
+
+As the rooks movement is limited by other pieces in its way, we have to take those pieces
+into account for implementing its \mintinline{cpp}{isValid} function:
+
+\begin{cpp*}{linenos}
+bool Rook::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = r == row || c == col;
+  if (r == row && abs(c-col) > 1) { // same row
+    if (c < col) { // left
+      for (int cc = c+1; cc < col; cc++) {
+        auto pc = bd[r][cc];
+        if (pc) { valid = false; break; }
+      }
+    } else { // right
+      for (int cc = col+1; cc < c; cc++) {
+        auto pc = bd[r][cc];
+        if (pc) { valid = false; break; }
+      }
+    }
+  }
+  if (c == col && abs(r-row) > 1) { // same column
+    if (r < row) { // top
+      for (int rr = r+1; rr < row; rr++) {
+        auto pc = bd[rr][c];
+        if (pc) { valid = false; break; }
+      }
+    } else { // down
+      for (int rr = row+1; rr < r; rr++) {
+        auto pc = bd[rr][c];
+        if (pc) { valid = false; break; }
+      }
+    }
+  }
+  return valid;
+}
+\end{cpp*}
+
+First, we set the result to \mintinline{cpp}{valid} if the given field it is on the same row
+or column as the rook(2).\\
+Then, we check for two cases:
+\begin{itemize}
+  \item the field is on the same row (3), or
+  \item the field is on the same column (16).
+\end{itemize}
+
+In both cases, we check wether there is another piece between the field and the rook by
+iterating over all those fields on that row, respective column.
+If so, we set \mintinline{cpp}{valid} to \mintinline{cpp}{false} and stop the search (7, 12, 20, 25).
+
+Observe, that we have four searches, for every direction the rook can move: up, down, left, right.
+But only one of them will ever be executed for any given field: either on the same row \emph{or}
+on the same column.
+As the search-space is very small for each search (at most 6 checks), we can consider this as a
+\emph{constant time} search, or in asymptotic notation $\mathcal{O}(1)$.
+
+\subsubsection{The Bishop}
+The \emph{Bishop} can move any distance along the diagonals, on which it is placed,
+unless its way is blocked by another piece:
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{../img/bishop}
+\end{center}
+
+Observe, that a bishop, placed initially on a light field, will always stay on a light field,
+and vice versa.
+Thus, both players each have a \emph{dark} and a \emph{light} bishop (the white bishop on
+\texttt{f4} is a \emph{dark} bishop with its initial position on \texttt{c1}).
+Dark and light bishops can never attack each other.
+
+We use essentially the same logic as for the rook, but this time we check for pieces on
+the same diagonal:
+
+\begin{cpp}
+bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd,int r,int c) {
+  bool valid = r-c == row-col || r+c == row+col;
+  if (r-c == row-col) { // same major diagonal
+    if (r < row) { // upper
+      for (int rr = row-1; rr > r; rr--) {
+        for (int cc = col-1; cc > c; cc--) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
+        }
+      }
+    } else { // lower
+      for (int rr = row+1; rr < r; rr++) {
+        for (int cc = col+1; cc < c; cc++) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
+        }
+      }
+    }
+  }
+  if (r+c == row+col) { // same minor diagonal
+    if (r < row) { // upper
+      for (int rr = row-1; rr > r; rr--) {
+        for (int cc = col+1; cc < c; cc++) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
+        }
+      }
+    } else { // lower
+      for (int rr = row+1; rr < r; rr++) {
+        for (int cc = col-1; cc > c; cc--) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
+        }
+      }
+    }
+  }
+  return valid;
+}
+\end{cpp}
+
+\subsubsection{The Queen}
+The \emph{Queen} can move any distance in all directions (on its rank, file or diagonals),
+only limited by other pieces in its way.
+In the image below you can see, why the queen is the strongest piece on the board:
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{../img/queen.jpg}
+\end{center}
+
+We use a little trick to get the queens valid moves: as the queen can move like a rook
+\emph{and} a bishop, we just check for valid moves for \emph{either} of them:
+
+\begin{cpp}
+bool Queen::isValid(std::vector<std::vector<Piece*>>& bd,int r,int c) {
+  auto rook = new Rook(white, row, col);
+  auto bishop = new Bishop(white, row, col);
+  bool valid = rook->isValid(bd, r, c) || bishop->isValid(bd, r, c);
+  delete rook;
+  delete bishop;
+  return valid;
+}
+\end{cpp}
+
+Observe that we have to delete those dummy pieces, in order to prevent any memory leaks.
+
+\subsubsection{The Pawn}
+The last piece to cover is the \emph{Pawn}: it is the weakest piece on the board, but in
+exchange, both players have 8 of them.
+The movement of the pawns is the most complex of all pieces:
+
+\begin{itemize}
+  \item \textbf{base case}: move straight forward one square on its file, if that square is vacant
+  \item \textbf{capturing}: capture an opponents piece on eiher of the two squares diagonally
+    in front of it
+  \item \textbf{initial position}: if the pawn has not yet moved, it has the option of moving two
+    squares straight forward, provided both squares are vacant.
+\end{itemize}
+
+Notice that the terms \emph{forward} and \emph{in front} always refer to the direction towards
+the opponents pieces: the \emph{white} pawns moves to the higher ranks (e.g. \texttt{e2-e4}),
+while the \emph{black} pawns move towards the lower ranks (e.g. \texttt{d3xe2}).
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{../img/pawn.jpg}
+\end{center}
+
+There are also two special moves involving pawns, called \emph{en passant} and \emph{promotion},
+which we will cover in section ??.
+
+Here's the code to put the rules in action:
+
+\begin{cpp*}{linenos}
+bool Pawn::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = false;
+  if (white) {
+    if (r == row-1 && c == col) { // move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
+    }
+    if (row == 6 && r == 4 && c == col) { // initial move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
+    }
+    if (r == row-1 && (c == col-1 || c == col+1)) { // capture
+      auto pc = bd[r][c];
+      if (pc && pc->isWhite() != white) valid = true;
+    }
+  } else { // black
+    if (r == row+1 && c == col) { // move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
+    }
+    if (row == 1 && r == 3 && c == col) { // initial move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
+    }
+    if (r == row+1 && (c == col-1 || c == col+1)) { // capture
+      auto pc = bd[r][c];
+      if (pc && pc->isWhite() != white) valid = true;
+    }
+  }
+  return valid;
+}
+\end{cpp*}
+
+We have to consider white and black pawns separately, as they move in different directions (3, 16).
+If there's no piece in front of the pawn, it can move to that field (6, 19).
+If the pawn is on its initial position (8, 21), it also can move two squares ahead, if that field
+isn't occopied (10, 23).
+If there's a piece diagonal in front of the pawn (12, 25), it can be captured, if it is of the
+other color (14, 27).

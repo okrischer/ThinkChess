@@ -9,8 +9,7 @@ public:
   virtual char getValue() = 0;
   virtual bool isWhite() = 0;
   virtual bool isCaptured() = 0;
-  virtual std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) = 0;
+  virtual bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) = 0;
 };
 
 
@@ -24,9 +23,7 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
-
-  std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) override;
+  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -48,9 +45,7 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
-
-  std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) override;
+  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -72,9 +67,7 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
-
-  std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) override;
+  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -96,9 +89,7 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
-
-  std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) override;
+  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -120,9 +111,7 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
-
-  std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) override;
+  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -144,9 +133,7 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
-
-  std::vector<std::vector<short>>
-    validMoves(std::vector<std::vector<Piece*>>& bd) override;
+  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;

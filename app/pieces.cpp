@@ -2,228 +2,125 @@
 #include <vector>
 using namespace std;
 
-vector<vector<short>> King::validMoves(vector<vector<Piece*>>& bd) {
-  vector<vector<short>> moves(8, vector<short>(8, 0));
-  for (int r = 0; r < 8; r++) {
-    for (int c = 0; c < 8; c++) {
-      if (abs(r-row) <= 1 && abs(c-col) <= 1) {
-        auto pc = bd[r][c];
-        if (!pc) moves[r][c] = 1;
-        else if (pc->isWhite() != white) moves[r][c] = 2;
-      }
-    }
-  }
-  // todo: castling, need check and moves
-  return moves;
+bool King::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = abs(r-row) <= 1 && abs(c-col) <= 1;
+  return valid;
 }
 
-
-vector<vector<short>> Knight::validMoves(vector<vector<Piece*>>& bd) {
-  vector<vector<short>> moves(8, vector<short>(8, 0));
-  for (int r = 0; r < 8; r++) {
-    for (int c = 0; c < 8; c++) {
-      if ((abs(r-row) == 1 && abs(c-col) == 2) || (abs(r-row) == 2 && abs(c-col) == 1)) {
-        auto pc = bd[r][c];
-        if (!pc) moves[r][c] = 1;
-        else if (pc->isWhite() != white) moves[r][c] = 2;
-      }
-    }
-  }
-  return moves;
+bool Knight::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = (abs(r-row) == 1 && abs(c-col) == 2) ||
+               (abs(r-row) == 2 && abs(c-col) == 1);
+  return valid;
 }
 
-
-vector<vector<short>> Rook::validMoves(vector<vector<Piece*>>& bd) {
-  vector<vector<short>> moves(8, vector<short>(8, 0));
-  for (int r = 0; r < 8; r++) {
-    for (int c = 0; c < 8; c++) {
-      // same row
-      if (r == row) {
-        bool valid = true;
-        auto pc = bd[r][c];
-        if (c < col) {
-          for (int cc = c+1; cc < col; cc++) {
-            if (bd[r][cc]) {
-              valid = false;
-              break;
-            }
-          }
-          if (valid) {
-            if (!pc) moves[r][c] = 1;
-            else if (pc->isWhite() != white) moves[r][c] = 2;
-          }
-        } else if (c > col) {
-          for (int cc = col+1; cc < c; cc++) {
-            if (bd[r][cc]) {
-              valid = false;
-              break;
-            }
-          }
-          if (valid) {
-            if (!pc) moves[r][c] = 1;
-            else if(pc->isWhite() != white) moves[r][c] = 2;
-          }
-        }
+bool Rook::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = r == row || c == col;
+  if (r == row && abs(c-col) > 1) { // same row
+    if (c < col) { // left
+      for (int cc = c+1; cc < col; cc++) {
+        auto pc = bd[r][cc];
+        if (pc) { valid = false; break; }
       }
-      // same column
-      else if (c == col) {
-        bool valid = true;
-        auto pc = bd[r][c];
-        if (r < row) {
-          for (int rr = r+1; rr < row; rr++) {
-            if (bd[rr][c]) {
-              valid = false;
-              break;
-            }
-          }
-          if (valid) {
-            if (!pc) moves[r][c] = 1;
-            else if(pc->isWhite() != white) moves[r][c] = 2;
-          }
-        } else if (r > row) {
-          for (int rr = row+1; rr < r; rr++) {
-            if (bd[rr][c]) {
-              valid = false;
-              break;
-            }
-          }
-          if (valid) {
-            if (!pc) moves[r][c] = 1;
-            else if(pc->isWhite() != white) moves[r][c] = 2;
-          }
-        }
+    } else { // right
+      for (int cc = col+1; cc < c; cc++) {
+        auto pc = bd[r][cc];
+        if (pc) { valid = false; break; }
       }
     }
   }
-  return moves;
+  if (c == col && abs(r-row) > 1) { // same column
+    if (r < row) { // top
+      for (int rr = r+1; rr < row; rr++) {
+        auto pc = bd[rr][c];
+        if (pc) { valid = false; break; }
+      }
+    } else { // down
+      for (int rr = row+1; rr < r; rr++) {
+        auto pc = bd[rr][c];
+        if (pc) { valid = false; break; }
+      }
+    }
+  }
+  return valid;
 }
 
-
-vector<vector<short>> Bishop::validMoves(vector<vector<Piece*>>& bd) {
-  vector<vector<short>> moves(8, vector<short>(8, 0));
-  bool blocked = false;
-  for (int r = row-1; r >= 0 && !blocked; r--) {  // upper half
-    for (int c = 0; c < col; c++) {               // left half
-      if (r-c == row-col) {
-        auto pc = bd[r][c];
-        if (!pc) moves[r][c] = 1;
-        else {
-          if (pc->isWhite() != white) moves[r][c] = 2;
-          blocked = true;
+bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = r-c == row-col || r+c == row+col;
+  if (r-c == row-col) { // same major diagonal
+    if (r < row) { // upper
+      for (int rr = row-1; rr > r; rr--) {
+        for (int cc = col-1; cc > c; cc--) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
+        }
+      }
+    } else { // lower
+      for (int rr = row+1; rr < r; rr++) {
+        for (int cc = col+1; cc < c; cc++) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
         }
       }
     }
   }
-  blocked = false;
-  for (int r = row-1; r >= 0 && !blocked; r--) {  // upper half
-    for (int c = col+1; c < 8; c++) {             // right half
-      if (r+c == row+col) {
-        auto pc = bd[r][c];
-        if (!pc) moves[r][c] = 1;
-        else {
-          if (pc->isWhite() != white) moves[r][c] = 2;
-          blocked = true;
+  if (r+c == row+col) { // same minor diagonal
+    if (r < row) { // upper
+      for (int rr = row-1; rr > r; rr--) {
+        for (int cc = col+1; cc < c; cc++) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
+        }
+      }
+    } else { // lower
+      for (int rr = row+1; rr < r; rr++) {
+        for (int cc = col-1; cc > c; cc--) {
+          auto pc = bd[rr][cc];
+          if (pc) { valid = false; break; }
         }
       }
     }
   }
-  blocked = false;
-  for (int r = row+1; r < 8 && !blocked; r++) {  // lower half
-    for (int c = 0; c < col; c++) {              // left half
-      if (r+c == row+col) {
-        auto pc = bd[r][c];
-        if (!pc) moves[r][c] = 1;
-        else {
-          if (pc->isWhite() != white) moves[r][c] = 2;
-          blocked = true;
-        }
-      }
-    }
-  }
-  blocked = false;
-  for (int r = row+1; r < 8 && !blocked; r++) {  // lower half
-    for (int c = col+1; c < 8; c++) {            // right half
-      if (c-r == col-row) {
-        auto pc = bd[r][c];
-        if (!pc) moves[r][c] = 1;
-        else {
-          if (pc->isWhite() != white) moves[r][c] = 2;
-          blocked = true;
-        }
-      }
-    }
-  }
-  return moves;
+  return valid;
 }
 
-
-vector<vector<short>> Queen::validMoves(vector<vector<Piece*>>& bd) {
-  vector<vector<short>> moves(8, vector<short>(8, 0));
-  // create rook and bishop on this position
-  Piece* rook = new Rook(white, row, col);
-  Piece* bishop = new Bishop(white, row, col);
-  // get valid moves from rook and bishop
-  auto movesRook = rook->validMoves(bd);
-  auto movesBishop = bishop->validMoves(bd);
-  // merge valid moves
-  for (int r = 0; r < 8; r++) {
-    for (int c = 0; c < 8; c++) {
-      if (movesRook[r][c] > 0) moves[r][c] = movesRook[r][c];
-      if (movesBishop[r][c] > 0) moves[r][c] = movesBishop[r][c];
-    }
-  }
+bool Queen::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  auto rook = new Rook(white, row, col);
+  auto bishop = new Bishop(white, row, col);
+  bool valid = rook->isValid(bd, r, c) || bishop->isValid(bd, r, c);
   delete rook;
   delete bishop;
-  return moves;
+  return valid;
 }
 
-
-std::vector<std::vector<short>> Pawn::validMoves(std::vector<std::vector<Piece*>>& bd) {
-  std::vector<std::vector<short>> moves(8, std::vector<short>(8, 0));
+bool Pawn::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+  bool valid = false;
   if (white) {
-    // first move
-    if (row == 6) {
-      auto pc = bd[row-1][col];
-      if (!pc) moves[row-1][col] = 1;
-      auto pd = bd[row-2][col];
-      if (!pc && !pd) moves[row-2][col] = 1;
+    if (r == row-1 && c == col) { // move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
     }
-    // every move
-    if (row > 0) {
-      auto pc = bd[row-1][col];
-      if (!pc) moves[row-1][col] = 1;
-      if (col > 0) {
-        pc = bd[row-1][col-1];
-        if (pc && pc->isWhite() != white) moves[row-1][col-1] = 2;
-      }
-      if (col < 7) {
-        pc = bd[row-1][col+1];
-        if (pc && pc->isWhite() != white) moves[row-1][col+1] = 2;
-      }
+    if (row == 6 && r == 4 && c == col) { // initial move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
     }
-    // todo: en passant, need last move
+    if (r == row-1 && (c == col-1 || c == col+1)) { // capture
+      auto pc = bd[r][c];
+      if (pc && pc->isWhite() != white) valid = true;
+    }
   } else { // black
-    // first move
-    if (row == 1) {
-      auto pc = bd[row+1][col];
-      if (!pc) moves[row+1][col] = 1;
-      auto pd = bd[row+2][col];
-      if (!pc && !pd) moves[row+2][col] = 1;
+    if (r == row+1 && c == col) { // move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
     }
-    // every move
-    if (row < 7) {
-      auto pc = bd[row+1][col];
-      if (!pc) moves[row+1][col] = 1;
-      if (col > 0) {
-        pc = bd[row+1][col-1];
-        if (pc && pc->isWhite() != white) moves[row+1][col-1] = 2;
-      }
-      if (col < 7) {
-        pc = bd[row+1][col+1];
-        if (pc && pc->isWhite() != white) moves[row+1][col+1] = 2;
-      }
+    if (row == 1 && r == 3 && c == col) { // initial move
+      auto pc = bd[r][c];
+      if (!pc) valid = true;
     }
-    // todo: en passant, need last move
+    if (r == row+1 && (c == col-1 || c == col+1)) { // capture
+      auto pc = bd[r][c];
+      if (pc && pc->isWhite() != white) valid = true;
+    }
   }
-  return moves;
+  return valid;
 }
+

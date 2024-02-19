@@ -4,21 +4,32 @@
 #include <utility>
 #include <vector>
 
-std::vector<std::vector<Piece*>> board(8, std::vector<Piece*>(8));
-std::vector<std::vector<short>> validMoves(8, std::vector<short>(8, 0));
+using namespace std;
 
-void setValidMoves(std::vector<std::vector<Piece*>>& bd, Piece* pc) {
-  if (pc) validMoves = pc->validMoves(bd);
+vector<vector<Piece*>> board(8, vector<Piece*>(8));
+vector<vector<short>> validMoves(8, vector<short>(8, 0));
+
+void setValidMoves(vector<vector<Piece*>>& bd, Piece* pc) {
+  if (!pc) return;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      if (pc->isValid(bd, row, col)) {
+        auto current = bd[row][col];
+        if (!current) validMoves[row][col] = 1; 
+        else if (pc->isWhite() != current->isWhite()) validMoves[row][col] = 2;
+      }
+    }
+  }
 }
 
-std::pair<int, int> getField(int x, int y) {
+pair<int, int> getField(int x, int y) {
   int fx = x / 80;
   int fy = y / 80;
-  auto field = std::make_pair(fy, fx);
+  auto field = make_pair(fy, fx);
   return field;
 }
 
-void reset_board(std::vector<std::vector<Piece*>>& bd) {
+void reset_board(vector<vector<Piece*>>& bd) {
   for (auto rank : bd) {
     for (auto piece : rank) {
       delete piece;
@@ -137,14 +148,14 @@ int main() {
       // mouse button pressed
       if (event.type == sf::Event::MouseButtonPressed) {
         if (event.mouseButton.button == sf::Mouse::Right) {
-          std::pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+          pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
           setValidMoves(board, board[f.first][f.second]);
         }
       }
       // mouse button released
       if (event.type == sf::Event::MouseButtonReleased) {
         if (event.mouseButton.button == sf::Mouse::Right) {
-          validMoves = std::vector<std::vector<short>>(8, std::vector<short>(8, 0));
+          validMoves = vector<vector<short>>(8, vector<short>(8, 0));
         }
       }
 
