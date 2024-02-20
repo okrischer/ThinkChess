@@ -1,18 +1,116 @@
 #include <SFML/Graphics.hpp>
 #include "pieces.hpp"
+#include "list.hpp"
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <string>
 
 using namespace std;
+using namespace list;
 
+// matrix of pieces representing the board
 vector<vector<Piece*>> board(8, vector<Piece*>(8));
+// matrix of valid moves for display
 vector<vector<short>> validMoves(8, vector<short>(8, 0));
-bool player = true; // white to move
+// list of moves, used as a stack
+auto* moves = new List<string>;
+// list of captured pieces, used as a queue
+auto* captured = new List<Piece*>;
+// which player's turn, starting with white
+bool player = true;
+// touched field for making moves
 pair<int, int> touched{-1, -1};
 
+// convert columns to files
+char colToFile(int col) {
+  char file;
+  switch (col) {
+  case 0:
+    file = 'a';
+    break;
+  case 1:
+    file = 'b';
+    break;
+  case 2:
+    file = 'c';
+    break;
+  case 3:
+    file = 'd';
+    break;
+  case 4:
+    file = 'e';
+    break;
+  case 5:
+    file = 'f';
+    break;
+  case 6:
+    file = 'g';
+    break;
+  case 7:
+    file = 'h';
+    break;
+  }
+  return file;
+}
+
+// convert rows to ranks
+char rowToRank(int row) {
+  char rank;
+  switch (row) {
+  case 0:
+    rank = '8';
+    break;
+  case 1:
+    rank = '7';
+    break;
+  case 2:
+    rank = '6';
+    break;
+  case 3:
+    rank = '5';
+    break;
+  case 4:
+    rank = '4';
+    break;
+  case 5:
+    rank = '3';
+    break;
+  case 6:
+    rank = '2';
+    break;
+  case 7:
+    rank = '1';
+    break;
+  }
+  return rank;
+}
+
+// convert board coordinates to moves notation
+string convertFromBoard(bool cap, Piece* from, pair<int, int> to) {
+  string move;
+  char type = from->getType();
+  if (type != 'P') {
+    move.append(1, type);
+    move.append(1, ' ');
+  }
+  move.append(1, colToFile(from->getCol()));
+  move.append(1, rowToRank(from->getRow()));
+  if (cap) {
+    move.append(1, 'x');
+  } else {
+    move.append(1, '-');
+  }
+  move.append(1, colToFile(to.second));
+  move.append(1, rowToRank(to.first));
+  return move;
+}
+
+// make a move
 void makeMove(vector<vector<Piece*>>& bd, pair<int, int> from, pair<int, int> to) {
   auto pcf = bd[from.first][from.second];
+  auto pct = bd[to.first][to.second];
+  bool cap = false;
   if (!pcf) {
     cout << "no piece under cursor\n";
     touched = {-1, -1};
@@ -24,17 +122,20 @@ void makeMove(vector<vector<Piece*>>& bd, pair<int, int> from, pair<int, int> to
     return;
   }
   if (pcf->isValid(bd, to.first, to.second)) {
-    auto pct = bd[to.first][to.second];
     if (pct) {
+      cap = true;
       pct->capture();
-      delete pct;
+      captured->push_back(pct);
     }
+    moves->push_front(convertFromBoard(cap, pcf, to));
     bd[to.first][to.second] = pcf;
     bd[from.first][from.second] = nullptr;
     pcf->makeMove(to.first, to.second);
     touched = {-1, -1};
     player = !player;
-    cout << "ok\n";
+    // debug
+    cout << "captured: " << captured->size() << "\n";
+    cout << moves->peek(1) << "\n";
   } else {
     cout << "illegal move!\n";
     touched = {-1, -1};
@@ -47,7 +148,7 @@ void setValidMoves(vector<vector<Piece*>>& bd, Piece* pc) {
     for (int col = 0; col < 8; col++) {
       if (pc->isValid(bd, row, col)) {
         auto current = bd[row][col];
-        if (!current) validMoves[row][col] = 1; 
+        if (!current) validMoves[row][col] = 1;
         else if (pc->isWhite() != current->isWhite()) validMoves[row][col] = 2;
       }
     }
@@ -62,6 +163,7 @@ pair<int, int> getField(int x, int y) {
 }
 
 void reset_board(vector<vector<Piece*>>& bd) {
+  // todo: reset moves and captured pieces
   for (auto rank : bd) {
     for (auto piece : rank) {
       delete piece;
@@ -212,22 +314,22 @@ int main() {
           auto piece = board[row][col];
           sf::Sprite pc;
           switch (piece->getType()) {
-          case 'k':
+          case 'K':
             piece->isWhite() ? pc = wk : pc = bk;
             break;
-          case 'q':
+          case 'Q':
             piece->isWhite() ? pc = wq : pc = bq;
             break;
-          case 'r':
+          case 'R':
             piece->isWhite() ? pc = wr : pc = br;
             break;
-          case 'b':
+          case 'B':
             piece->isWhite() ? pc = wb : pc = bb;
             break;
-          case 'n':
+          case 'N':
             piece->isWhite() ? pc = wn : pc = bn;
             break;
-          case 'p':
+          case 'P':
             piece->isWhite() ? pc = wp : pc = bp;
             break;
           }
