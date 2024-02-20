@@ -8,6 +8,38 @@ using namespace std;
 
 vector<vector<Piece*>> board(8, vector<Piece*>(8));
 vector<vector<short>> validMoves(8, vector<short>(8, 0));
+bool player = true; // white to move
+pair<int, int> touched{-1, -1};
+
+void makeMove(vector<vector<Piece*>>& bd, pair<int, int> from, pair<int, int> to) {
+  auto pcf = bd[from.first][from.second];
+  if (!pcf) {
+    cout << "no piece under cursor\n";
+    touched = {-1, -1};
+    return;
+  }
+  if (pcf->isWhite() != player) {
+    cout << "it's not your turn\n";
+    touched = {-1, -1};
+    return;
+  }
+  if (pcf->isValid(bd, to.first, to.second)) {
+    auto pct = bd[to.first][to.second];
+    if (pct) {
+      pct->capture();
+      delete pct;
+    }
+    bd[to.first][to.second] = pcf;
+    bd[from.first][from.second] = nullptr;
+    pcf->makeMove(to.first, to.second);
+    touched = {-1, -1};
+    player = !player;
+    cout << "ok\n";
+  } else {
+    cout << "illegal move!\n";
+    touched = {-1, -1};
+  }
+}
 
 void setValidMoves(vector<vector<Piece*>>& bd, Piece* pc) {
   if (!pc) return;
@@ -136,11 +168,12 @@ int main() {
   sf::Sprite bp;
   bp.setTexture(figures);
   bp.setTextureRect(sf::IntRect(300,60,60,60));
-  
+
   sf::CircleShape valid(20.f);
 
-  // begin animation
+  // game loop
   while (window.isOpen()) {
+    // event loop
     for (auto event = sf::Event{}; window.pollEvent(event);) {
       if (event.type == sf::Event::Closed) {
         window.close();
@@ -151,15 +184,24 @@ int main() {
           pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
           setValidMoves(board, board[f.first][f.second]);
         }
+        if (event.mouseButton.button == sf::Mouse::Left) {
+          pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+          if (touched.first == -1) touched = f;
+          else if (f == touched) touched = {-1, -1};
+        }
       }
       // mouse button released
       if (event.type == sf::Event::MouseButtonReleased) {
         if (event.mouseButton.button == sf::Mouse::Right) {
           validMoves = vector<vector<short>>(8, vector<short>(8, 0));
         }
+        if (event.mouseButton.button == sf::Mouse::Left) {
+          pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+          if (touched.first != -1 && touched != f)
+            makeMove(board, touched, f);
+        }
       }
-
-    } // end event-loop
+    } // end event loop
 
     // draw board
     window.draw(bs);
@@ -189,7 +231,11 @@ int main() {
             piece->isWhite() ? pc = wp : pc = bp;
             break;
           }
-          pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
+          if (row == touched.first && col == touched.second) {
+            pc.setPosition(col*80.f, row*80.f);
+          } else {
+            pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
+          }
           window.draw(pc);
         }
       }
@@ -205,8 +251,8 @@ int main() {
         }
       }
     }
-
     // display frame
     window.display();
-  }
-}
+
+  } // end game loop
+} // end main

@@ -50,15 +50,19 @@ bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
     if (r < row) { // upper
       for (int rr = row-1; rr > r; rr--) {
         for (int cc = col-1; cc > c; cc--) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr-cc == row-col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     } else { // lower
       for (int rr = row+1; rr < r; rr++) {
         for (int cc = col+1; cc < c; cc++) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr-cc == row-col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     }
@@ -67,15 +71,19 @@ bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
     if (r < row) { // upper
       for (int rr = row-1; rr > r; rr--) {
         for (int cc = col+1; cc < c; cc++) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr+cc == row+col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     } else { // lower
       for (int rr = row+1; rr < r; rr++) {
         for (int cc = col-1; cc > c; cc--) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr+cc == row+col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     }

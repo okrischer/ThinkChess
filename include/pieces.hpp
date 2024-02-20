@@ -9,6 +9,8 @@ public:
   virtual char getValue() = 0;
   virtual bool isWhite() = 0;
   virtual bool isCaptured() = 0;
+  virtual void capture() = 0;
+  virtual void makeMove(int r, int c) = 0;
   virtual bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) = 0;
 };
 
@@ -23,6 +25,8 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
+  void capture() override { captured = true; }
+  void makeMove(int r, int c) override { row = r; col = c; }
   bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
@@ -45,6 +49,8 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
+  void capture() override { captured = true; }
+  void makeMove(int r, int c) override { row = r; col = c; }
   bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
@@ -67,6 +73,8 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
+  void capture() override { captured = true; }
+  void makeMove(int r, int c) override { row = r; col = c; }
   bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
@@ -89,6 +97,8 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
+  void capture() override { captured = true; }
+  void makeMove(int r, int c) override { row = r; col = c; }
   bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
@@ -111,6 +121,8 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
+  void capture() override { captured = true; }
+  void makeMove(int r, int c) override { row = r; col = c; }
   bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:
@@ -133,6 +145,8 @@ public:
   char getValue() override { return value; }
   bool isWhite() override { return white; }
   bool isCaptured() override { return captured; }
+  void capture() override { captured = true; }
+  void makeMove(int r, int c) override { row = r; col = c; }
   bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
 
 private:

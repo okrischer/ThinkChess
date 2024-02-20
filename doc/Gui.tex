@@ -692,7 +692,7 @@ unless its way is blocked by another piece:
 \includegraphics[width=.5\linewidth]{../img/bishop}
 \end{center}
 
-Observe, that a bishop, placed initially on a light field, will always stay on a light field,
+Notice, that a bishop, placed initially on a light field, will always stay on a light field,
 and vice versa.
 Thus, both players each have a \emph{dark} and a \emph{light} bishop (the white bishop on
 \texttt{f4} is a \emph{dark} bishop with its initial position on \texttt{c1}).
@@ -708,15 +708,19 @@ bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd,int r,int c) {
     if (r < row) { // upper
       for (int rr = row-1; rr > r; rr--) {
         for (int cc = col-1; cc > c; cc--) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr-cc == row-col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     } else { // lower
       for (int rr = row+1; rr < r; rr++) {
         for (int cc = col+1; cc < c; cc++) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr-cc == row-col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     }
@@ -725,15 +729,19 @@ bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd,int r,int c) {
     if (r < row) { // upper
       for (int rr = row-1; rr > r; rr--) {
         for (int cc = col+1; cc < c; cc++) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr+cc == row+col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     } else { // lower
       for (int rr = row+1; rr < r; rr++) {
         for (int cc = col-1; cc > c; cc--) {
-          auto pc = bd[rr][cc];
-          if (pc) { valid = false; break; }
+          if (rr+cc == row+col) {
+            auto pc = bd[rr][cc];
+            if (pc) { valid = false; break; }
+          }
         }
       }
     }
@@ -741,6 +749,14 @@ bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd,int r,int c) {
   return valid;
 }
 \end{cpp}
+
+Here, we also have four searches: two for the major diagonal and another two for the minor
+diagonal.
+The searches are now nested loops, as we need to get both coordinates for the current field.
+There are at most $6 \times 6 = 36$ tests per search, and on average only $3 \times 3 = 9$
+tests for each.
+And, as before, only one of these searches will ever by executed for any given field.
+So, we may consider these searches as \emph{constant time} searches as well.
 
 \subsubsection{The Queen}
 The \emph{Queen} can move any distance in all directions (on its rank, file or diagonals),
