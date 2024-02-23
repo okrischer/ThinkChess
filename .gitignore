@@ -10,7 +10,6 @@ doc/_minted-Main/
 *.gz
 *.log
 *.out
-*.pdf
 *.swp
 *.toc
 *.txt
