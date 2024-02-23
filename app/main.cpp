@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include "pieces.hpp"
+#include "moves.hpp"
 #include "list.hpp"
 #include <iostream>
 #include <utility>
@@ -7,219 +8,46 @@
 #include <string>
 
 using namespace std;
-using namespace list;
 
-// matrix of pieces representing the board
-vector<vector<Piece*>> board(8, vector<Piece*>(8));
-// matrix of valid moves for display
-vector<vector<short>> validMoves(8, vector<short>(8, 0));
-// list of moves, used as a stack
-auto* moves = new List<string>;
-// list of captured pieces, used as a queue
-auto* captured = new List<Piece*>;
-// which player's turn, starting with white
-bool player = true;
-// touched field for making moves
-pair<int, int> touched{-1, -1};
-
-// convert columns to files
-char colToFile(int col) {
-  char file;
-  switch (col) {
-  case 0:
-    file = 'a';
-    break;
-  case 1:
-    file = 'b';
-    break;
-  case 2:
-    file = 'c';
-    break;
-  case 3:
-    file = 'd';
-    break;
-  case 4:
-    file = 'e';
-    break;
-  case 5:
-    file = 'f';
-    break;
-  case 6:
-    file = 'g';
-    break;
-  case 7:
-    file = 'h';
-    break;
-  }
-  return file;
-}
-
-// convert rows to ranks
-char rowToRank(int row) {
-  char rank;
-  switch (row) {
-  case 0:
-    rank = '8';
-    break;
-  case 1:
-    rank = '7';
-    break;
-  case 2:
-    rank = '6';
-    break;
-  case 3:
-    rank = '5';
-    break;
-  case 4:
-    rank = '4';
-    break;
-  case 5:
-    rank = '3';
-    break;
-  case 6:
-    rank = '2';
-    break;
-  case 7:
-    rank = '1';
-    break;
-  }
-  return rank;
-}
-
-// convert board coordinates to moves notation
-string convertFromBoard(bool cap, Piece* from, pair<int, int> to) {
-  string move;
-  char type = from->getType();
-  if (type != 'P') {
-    move.append(1, type);
-    move.append(1, ' ');
-  }
-  move.append(1, colToFile(from->getCol()));
-  move.append(1, rowToRank(from->getRow()));
-  if (cap) {
-    move.append(1, 'x');
-  } else {
-    move.append(1, '-');
-  }
-  move.append(1, colToFile(to.second));
-  move.append(1, rowToRank(to.first));
-  return move;
-}
-
-// make a move
-void makeMove(vector<vector<Piece*>>& bd, pair<int, int> from, pair<int, int> to) {
-  auto pcf = bd[from.first][from.second];
-  auto pct = bd[to.first][to.second];
-  bool cap = false;
-  if (!pcf) {
-    cout << "no piece under cursor\n";
-    touched = {-1, -1};
-    return;
-  }
-  if (pcf->isWhite() != player) {
-    cout << "it's not your turn\n";
-    touched = {-1, -1};
-    return;
-  }
-  if (pcf->isValid(bd, to.first, to.second)) {
-    if (pct) {
-      cap = true;
-      pct->capture();
-      captured->push_back(pct);
-    }
-    moves->push_front(convertFromBoard(cap, pcf, to));
-    bd[to.first][to.second] = pcf;
-    bd[from.first][from.second] = nullptr;
-    pcf->makeMove(to.first, to.second);
-    touched = {-1, -1};
-    player = !player;
-    // debug
-    cout << "captured: " << captured->size() << "\n";
-    cout << moves->peek(1) << "\n";
-  } else {
-    cout << "illegal move!\n";
-    touched = {-1, -1};
-  }
-}
-
-void setValidMoves(vector<vector<Piece*>>& bd, Piece* pc) {
-  if (!pc) return;
-  for (int row = 0; row < 8; row++) {
-    for (int col = 0; col < 8; col++) {
-      if (pc->isValid(bd, row, col)) {
-        auto current = bd[row][col];
-        if (!current) validMoves[row][col] = 1;
-        else if (pc->isWhite() != current->isWhite()) validMoves[row][col] = 2;
-      }
-    }
-  }
-}
-
-pair<int, int> getField(int x, int y) {
-  int fx = x / 80;
-  int fy = y / 80;
-  auto field = make_pair(fy, fx);
-  return field;
-}
-
-void reset_board(vector<vector<Piece*>>& bd) {
-  // todo: reset moves and captured pieces
-  for (auto rank : bd) {
-    for (auto piece : rank) {
-      delete piece;
-    }
-  }
-  // rank 8 (black)
-  bd[0][0] = new Rook(0,0,0);
-  bd[0][1] = new Knight(0,0,1);
-  bd[0][2] = new Bishop(0,0,2);
-  bd[0][3] = new Queen(0,0,3);
-  bd[0][4] = new King(0,0,4);
-  bd[0][5] = new Bishop(0,0,5);
-  bd[0][6] = new Knight(0,0,6);
-  bd[0][7] = new Rook(0,0,7);
-  // rank 7 (black)
-  bd[1][0] = new Pawn(0,1,0);
-  bd[1][1] = new Pawn(0,1,1);
-  bd[1][2] = new Pawn(0,1,2);
-  bd[1][3] = new Pawn(0,1,3);
-  bd[1][4] = new Pawn(0,1,4);
-  bd[1][5] = new Pawn(0,1,5);
-  bd[1][6] = new Pawn(0,1,6);
-  bd[1][7] = new Pawn(0,1,7);
-  // rank 2 (white)
-  bd[6][0] = new Pawn(1,6,0);
-  bd[6][1] = new Pawn(1,6,1);
-  bd[6][2] = new Pawn(1,6,2);
-  bd[6][3] = new Pawn(1,6,3);
-  bd[6][4] = new Pawn(1,6,4);
-  bd[6][5] = new Pawn(1,6,5);
-  bd[6][6] = new Pawn(1,6,6);
-  bd[6][7] = new Pawn(1,6,7);
-  // rank 1 (white)
-  bd[7][0] = new Rook(1,7,0);
-  bd[7][1] = new Knight(1,7,1);
-  bd[7][2] = new Bishop(1,7,2);
-  bd[7][3] = new Queen(1,7,3);
-  bd[7][4] = new King(1,7,4);
-  bd[7][5] = new Bishop(1,7,5);
-  bd[7][6] = new Knight(1,7,6);
-  bd[7][7] = new Rook(1,7,7);
-}
 
 int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
-  auto window = sf::RenderWindow{ {640u, 640u}, "Think Chess++", sf::Style::Default, settings };
+  auto window = sf::RenderWindow{ {640u, 640u},
+                                  "ThinkChess++",
+                                  sf::Style::Default,
+                                  settings };
+
   window.setFramerateLimit(10);
 
-  reset_board(board);
+  // matrix of pieces representing the board
+  vector<vector<Piece*>> board(8, vector<Piece*>(8));
 
+  // matrix of valid moves for display
+  vector<vector<short>> validMoves(8, vector<short>(8, 0));
+
+  // list of moves, used as a stack
+  auto* moves = new list::List<string>;
+
+  // list of captured pieces, used as a stack
+  auto* captured = new list::List<Piece*>;
+
+  // player to turn, starting with white
+  bool player = true;
+
+  // touched field for making moves
+  pair<int, int> touched{-1, -1};
+
+  // initialize board
+  resetBoard(board, moves, captured);
+
+  // board sprite
   sf::Texture bi;
-  bi.loadFromFile("../img/chessboard.jpg");
+  bi.loadFromFile("../img/board.jpg");
   sf::Sprite bs;
   bs.setTexture(bi);
 
+  // sprites for pieces
   sf::Texture figures;
   figures.loadFromFile("../img/figures.png");
 
@@ -271,7 +99,14 @@ int main() {
   bp.setTexture(figures);
   bp.setTextureRect(sf::IntRect(300,60,60,60));
 
+  // marker for valid moves
   sf::CircleShape valid(20.f);
+
+  //marker for active piece
+  sf::RectangleShape frame(sf::Vector2f(63.f, 60.f));
+  frame.setFillColor(sf::Color(200, 200, 200, 50));
+  frame.setOutlineThickness(12.f);
+  frame.setOutlineColor(sf::Color(100, 100, 0));
 
   // game loop
   while (window.isOpen()) {
@@ -284,7 +119,7 @@ int main() {
       if (event.type == sf::Event::MouseButtonPressed) {
         if (event.mouseButton.button == sf::Mouse::Right) {
           pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-          setValidMoves(board, board[f.first][f.second]);
+          setValidMoves(board, validMoves, board[f.first][f.second]);
         }
         if (event.mouseButton.button == sf::Mouse::Left) {
           pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
@@ -300,7 +135,7 @@ int main() {
         if (event.mouseButton.button == sf::Mouse::Left) {
           pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
           if (touched.first != -1 && touched != f)
-            makeMove(board, touched, f);
+            makeMove(board, moves, captured, touched, f, player);
         }
       }
     } // end event loop
@@ -334,10 +169,10 @@ int main() {
             break;
           }
           if (row == touched.first && col == touched.second) {
-            pc.setPosition(col*80.f, row*80.f);
-          } else {
-            pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
+            frame.setPosition(col*80.f + 10.f, row*80.f + 10.f);
+            window.draw(frame);
           }
+          pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
           window.draw(pc);
         }
       }

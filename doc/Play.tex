@@ -1,0 +1,299 @@
+\chapter{Play the Game}
+
+Now that we have a board with the pieces on it, we actually want to play the game.
+
+To that goal, we will explore how to make moves and store them for later usage.
+Finally, we will consider special moves and positions to improve the game play.
+
+\section{Making Moves}\label{sec:makemoves}
+
+The first thing, we need for making moves, is a way to process user input.
+We'll do that inside the event loop of the main fuction:
+
+\begin{cpp*}{linenos}
+// mouse button pressed
+if (event.type == sf::Event::MouseButtonPressed) {
+  if (event.mouseButton.button == sf::Mouse::Left) {
+    pair<int, int> f = getField(event.mouseButton.x,
+                                event.mouseButton.y);
+    if (touched.first == -1) touched = f;
+    else if (f == touched) touched = {-1, -1};
+  }
+}
+// mouse button released
+if (event.type == sf::Event::MouseButtonReleased) {
+  if (event.mouseButton.button == sf::Mouse::Left) {
+    pair<int, int> f = getField(event.mouseButton.x,
+                                event.mouseButton.y);
+    if (touched.first != -1 && touched != f)
+      makeMove(board, moves, captured, touched, f, player);
+  }
+}
+
+// get board coordinates
+pair<int, int> getField(int x, int y) {
+  int fx = x / 80;
+  int fy = y / 80;
+  auto field = make_pair(fy, fx);
+  return field;
+}
+\end{cpp*}
+
+We're using the \emph{left} mouse button for making moves (3, 12); remember that we've
+used the right button for showing valid moves.\\
+First, we need the coordinates of the board, where the mouse button was pressed (4),
+respectively released (13).
+
+When \emph{pressing} the button, and no field was touched yet (6), we set the variable\\
+\mintinline{cpp}{pair<int,int> touched} to those coordinates.\\
+But if a field was already touched, and it's the current field, we reset
+\texttt{touched} (7).
+
+When \emph{releasing} the button, we check wether a field was touched (15), and if it's not
+the current field, we make a move from the touched to the current field (16).
+
+With this mechanism, we can make a move in two ways:
+\begin{itemize}
+  \item \emph{drag-and-drop}: just move a piece from its current position to the target,
+    while holding the left mouse button;
+  \item \emph{click twice}: click once on the piece to move, and a second time on the
+    target field.
+\end{itemize}
+
+The \mintinline{cpp}{getField()} function (21-26) converts the coordinates of the mouse cursor to
+the coordinates of the board matrix.
+Observe that it returns the coordinates in that order: first the row index, second the
+column index.
+
+In order to clean up the design, I decided to do some refactorings: I moved all function definitions,
+except the main function, to a speparate implementation file
+\texttt{app/moves.cpp}; and I moved all variable definitions into the main function, to get rid of
+global variables.
+So, we'll have the following definitions inside the main fuction:
+
+\begin{cpp*}{linenos}
+// matrix of pieces representing the board
+vector<vector<Piece*>> board(8, vector<Piece*>(8));
+
+// matrix of valid moves for display
+vector<vector<short>> validMoves(8, vector<short>(8, 0));
+
+// list of moves, used as a stack
+auto* moves = new list::List<string>;
+
+// list of captured pieces, used as a stack
+auto* captured = new list::List<Piece*>;
+
+// touched field for making moves
+pair<int, int> touched{-1, -1};
+
+// player to turn, starting with white
+bool player = true;
+\end{cpp*}
+
+The variables \texttt{moves} and \texttt{captures} are \emph{linked lists}, which I've implemented
+in a separate library called \texttt{datastructures} within a namespace \texttt{list}.
+I will not go into details here, but if you are interested in implementing a linked list for yourself,
+have a look at the file \texttt{include/list.hpp} in that directory (it's quite well documented,
+so you should find your way around).
+
+But now, to the most important function of this section: \mintinline{cpp}{makeMove()}.
+
+\begin{cpp*}{linenos}
+void makeMove(vector<vector<Piece*>>& bd,
+              list::List<string>* mv,
+              list::List<Piece*>* cp,
+              pair<int, int>& td,
+              pair<int, int> to,
+              bool& player)
+{
+  auto pcf = bd[td.first][td.second];
+  auto pct = bd[to.first][to.second];
+  bool cap = false;
+  if (!pcf) {
+    cout << "no piece under cursor\n";
+    td = {-1, -1};
+    return;
+  }
+  if (pcf->isWhite() != player) {
+    cout << "it's not your turn\n";
+    td = {-1, -1};
+    return;
+  }
+  if (pcf->isValid(bd, to.first, to.second)) {
+    if (pct && pct->isWhite() != pcf->isWhite()) {
+      cap = true;
+      pct->capture();
+      cp->push_front(pct);
+    } else if (pct) {
+      cout << "illegal move!\n";
+      td = {-1, -1};
+      return;
+    }
+    mv->push_front(convertFromBoard(cap, pcf, to));
+    bd[to.first][to.second] = pcf;
+    bd[td.first][td.second] = nullptr;
+    pcf->makeMove(to.first, to.second);
+    td = {-1, -1};
+    player = !player;
+    // log to console
+    cout << mv->peek(1) << "\n";
+    if (cap) {
+      auto capPc = cp->peek(1);
+      auto file = colToFile(capPc->getCol());
+      auto rank = rowToRank(capPc->getRow());
+      if (capPc->isCaptured())
+        cout << "captured: " << capPc->getType() << " on "
+             << file << rank << "\n";
+    } else {
+      cout << "no capture\n";
+    }
+  // illegal move
+  } else {
+    cout << "illegal move!\n";
+    td = {-1, -1};
+  }
+}
+\end{cpp*}
+
+First, we get the pieces of the start (\texttt{td}, the touched field) and target coordinates (\texttt{to})
+of the move(8, 9).\\
+If there's no piece at the start coordinates (11), reset the touched field (13) and abort the move (14).\\
+If the color of the start piece doesn't match the player, whose turn it is (16), also abort the move (19).
+
+Otherwise, check wether the move is valid (21), and wether the piece at the target position can be
+captured (21).\\
+If so, capture the piece (24) and and push it onto the stack of captured pieces (25).\\
+Otherwise, if there's a piece of the same color (26), abort the move (29).
+
+So far, we've checked all the possible variations and have a valid move; thus, we add the move to the
+stack of moves (31).\\
+Then, we set the piece under the cursor to its target position on the board (32), overwriting the old
+reference, and delete its old postion (33).
+
+Finally, we tell the piece its new position (34), reset the touched field (35), and switch to the other
+player (36).\\
+The logging in lines (38-48) is just temporary, we'll replace that in the next section~\ref{sec:enhance}.
+
+For pushing the move onto the moves-stack, we used a function \mintinline{cpp}{convertFromBoard} (31),
+which is defined like so:
+
+\begin{cpp}
+string convertFromBoard(bool cap, Piece* from, pair<int, int> to) {
+  string move;
+  char type = from->getType();
+  if (type != 'P') {
+    move.append(1, type);
+  }
+  move.append(1, colToFile(from->getCol()));
+  move.append(1, rowToRank(from->getRow()));
+  if (cap) {
+    move.append(1, 'x');
+  } else {
+    move.append(1, '-');
+  }
+  move.append(1, colToFile(to.second));
+  move.append(1, rowToRank(to.first));
+  return move;
+}
+
+char colToFile(int col) {
+  char file = 97 + col;
+  return file;
+}
+
+char rowToRank(int row) {
+  char rank = 56 - row;
+  return rank;
+}
+\end{cpp}
+
+The function takes a piece (\texttt{from}) and target coordinates (\texttt{to}) as parameters,
+and converts them into a string of
+\href{https://en.wikipedia.org/wiki/Algebraic_notation_(chess)}{algebraic chess notation}.\\
+It makes use of two helper functions \mintinline{cpp}{colToFile()} and \mintinline{cpp}{rowToRank()},
+which convert the coordinates of the board matrix to chess coordinates.
+
+Those fuctions use a little trick, based on the specification of the \mintinline{cpp}{char} type of
+C\textsuperscript{++}: the actual value of a character is stored as a \mintinline{cpp}{short int},
+based on the ascii code for that character.
+So, the letter `a' is stored internally as 97, and the digit `8' as 56. We use this fact for a
+simple calculation.
+
+The only thing left to do is to adjust the \mintinline{cpp}{resetBoard()} function to take care of
+the moves stack and the captured pieces:
+
+\begin{cpp}
+void resetBoard(vector<vector<Piece*>>& bd,
+                 list::List<string>* mv,
+                 list::List<Piece*>* cp)
+{
+  // reset moves and captured pieces
+  delete mv;
+  mv = new list::List<string>;
+  delete cp;
+  cp = new list::List<Piece*>;
+  // reset board
+  for (auto rank : bd) {
+    for (auto piece : rank) {
+      delete piece;
+    }
+  }
+  // --- snip ---
+}
+\end{cpp}
+
+We have to explicitly delete the moves stack and the stack of captured pieces when resetting to board,
+in order to avoid memory leaks.
+But then, we have to create them again as empty lists, as we want to use them for the next game.
+Notice, that not only the references to those lists are deleted, but also all elements inside the lists,
+due to that destructor in the file \texttt{datastructures/include/list.hpp}:
+
+\begin{cpp}
+template<typename T>
+class List : public LL<T> {
+public:
+  ~List() {
+    Node* node = head;
+    while(node) {
+      Node* curr = node;
+      node = node->next;
+      delete curr;
+    }
+  }
+}
+\end{cpp}
+
+The very last thing, we want to do in this section, is to add a marker inside the main function for the
+touched piece on the board
+
+\begin{cpp}
+sf::RectangleShape frame(sf::Vector2f(63.f, 60.f));
+frame.setFillColor(sf::Color(200, 200, 200, 50));
+frame.setOutlineThickness(12.f);
+frame.setOutlineColor(sf::Color(100, 100, 0));
+\end{cpp}
+
+and draw it together with the pieces inside the game loop:
+
+\begin{cpp}
+// draw pieces
+for (int row = 0; row < 8; row++) {
+  for (int col = 0; col < 8; col++) {
+    if (board[row][col]) {
+      auto piece = board[row][col];
+      // --- snip ---
+      if (row == touched.first && col == touched.second) {
+        frame.setPosition(col*80.f + 10.f, row*80.f + 10.f);
+        window.draw(frame);
+      }
+      pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
+      window.draw(pc);
+    }
+  }
+}
+\end{cpp}
+
+\section{Special Positions}\label{sec:specpos}
+
+\section{Special Moves}\label{sec:specmoves}
