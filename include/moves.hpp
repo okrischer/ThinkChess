@@ -31,7 +31,17 @@ void makeMove(vector<vector<Piece*>>& bd,
               list::List<Piece*>* cp,
               pair<int, int>& td,
               pair<int, int> to,
-              bool& player);
+              bool& player,
+              pair<int, int>& checkmate);
+
+// test for check
+bool check(vector<vector<Piece*>>& bd, Piece* pc);
+
+// test wether a given check can be resolved
+bool resolveCheck(vector<vector<Piece*>>& bd, bool white);
+
+// get opponents king coordinates
+pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white);
 
 // reset board for new game
 void resetBoard(vector<vector<Piece*>>& bd,

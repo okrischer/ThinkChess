@@ -20,6 +20,9 @@ int main() {
 
   window.setFramerateLimit(10);
 
+  // gamestate, set to play
+  short state = 1;
+
   // matrix of pieces representing the board
   vector<vector<Piece*>> board(8, vector<Piece*>(8));
 
@@ -37,6 +40,9 @@ int main() {
 
   // touched field for making moves
   pair<int, int> touched{-1, -1};
+
+  // checkmate
+  pair<int, int> checkmate{-1, -1};
 
   // initialize board
   resetBoard(board, moves, captured);
@@ -108,6 +114,12 @@ int main() {
   frame.setOutlineThickness(12.f);
   frame.setOutlineColor(sf::Color(100, 100, 0));
 
+  //marker for checkmate
+  sf::RectangleShape cm(sf::Vector2f(63.f, 60.f));
+  cm.setFillColor(sf::Color(200, 200, 200, 50));
+  cm.setOutlineThickness(12.f);
+  cm.setOutlineColor(sf::Color(200, 0, 0));
+
   // game loop
   while (window.isOpen()) {
     // event loop
@@ -122,9 +134,11 @@ int main() {
           setValidMoves(board, validMoves, board[f.first][f.second]);
         }
         if (event.mouseButton.button == sf::Mouse::Left) {
-          pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-          if (touched.first == -1) touched = f;
-          else if (f == touched) touched = {-1, -1};
+          if (state == 1) {
+            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+            if (touched.first == -1) touched = f;
+            else if (f == touched) touched = {-1, -1};
+          }
         }
       }
       // mouse button released
@@ -133,9 +147,11 @@ int main() {
           validMoves = vector<vector<short>>(8, vector<short>(8, 0));
         }
         if (event.mouseButton.button == sf::Mouse::Left) {
-          pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-          if (touched.first != -1 && touched != f)
-            makeMove(board, moves, captured, touched, f, player);
+          if (state == 1) {
+            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+            if (touched.first != -1 && touched != f)
+              makeMove(board, moves, captured, touched, f, player, checkmate);
+          }
         }
       }
     } // end event loop
@@ -172,6 +188,10 @@ int main() {
             frame.setPosition(col*80.f + 10.f, row*80.f + 10.f);
             window.draw(frame);
           }
+          if (row == checkmate.first && col == checkmate.second) {
+            cm.setPosition(col*80.f + 10.f, row*80.f + 10.f);
+            window.draw(cm);
+          }
           pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
           window.draw(pc);
         }
@@ -190,6 +210,9 @@ int main() {
     }
     // display frame
     window.display();
+
+    // stop game when checkmate
+    if (checkmate.first != -1) state = 0;
 
   } // end game loop
 } // end main

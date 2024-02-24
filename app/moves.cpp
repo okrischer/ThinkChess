@@ -1,5 +1,6 @@
 #include "moves.hpp"
 #include <iostream>
+#include <utility>
 
 // convert columns to files
 char colToFile(int col) {
@@ -57,13 +58,41 @@ void setValidMoves(vector<vector<Piece*>>& bd,
   }
 }
 
+// test for check
+bool check(vector<vector<Piece*>>& bd, bool white) {
+  Piece* king;
+  bool check = false;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      auto current = bd[row][col];
+      if (current && current->getType() == 'K' &&
+          current->isWhite() == white)
+      {
+        king = current;
+      }
+    }
+  }
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      auto current = bd[row][col];
+      if (current && current->isWhite() != white) {
+        if (current->isValid(bd, king->getRow(), king->getCol())) {
+          check = true;
+        }
+      }
+    }
+  }
+  return check;
+}
+
 // make a move
 void makeMove(vector<vector<Piece*>>& bd,
               list::List<string>* mv,
               list::List<Piece*>* cp,
               pair<int, int>& td,
               pair<int, int> to,
-              bool& player)
+              bool& player,
+              pair<int, int>& checkmate)
 {
   auto pcf = bd[td.first][td.second];
   auto pct = bd[to.first][to.second];
@@ -78,38 +107,100 @@ void makeMove(vector<vector<Piece*>>& bd,
     td = {-1, -1};
     return;
   }
+  // valid move?
   if (pcf->isValid(bd, to.first, to.second)) {
+    // can capture?
     if (pct && pct->isWhite() != pcf->isWhite()) {
       cap = true;
-      pct->capture();
       cp->push_front(pct);
-    } else if (pct) {
+    } else if (pct) { // same color
       cout << "illegal move!\n";
       td = {-1, -1};
       return;
     }
-    mv->push_front(convertFromBoard(cap, pcf, to));
+    // legal move
+    string move = convertFromBoard(cap, pcf, to);
     bd[to.first][to.second] = pcf;
     bd[td.first][td.second] = nullptr;
     pcf->makeMove(to.first, to.second);
+    // check?
+    if (check(bd, player)) { // gives itself check
+      cout << "illegal move!\n";
+      bd[to.first][to.second] = pct;
+      bd[td.first][td.second] = pcf;
+      pcf->makeMove(td.first, td.second);
+      td = {-1, -1};
+      return;
+    }
+    if (check(bd, !player)) { // gives opponent check
+      if (resolveCheck(bd, !player)) {
+        move.append(1, '+');
+      } else { // cannot get out of check
+        move.append(1, '#');
+        mv->push_front(move);
+        cout << mv->peek(1) << "\n";
+        checkmate = getKing(bd, !player);
+        return;
+      }
+    }
+    mv->push_front(move);
+    cout << mv->peek(1) << "\n";
     td = {-1, -1};
     player = !player;
-    // log to console
-    cout << mv->peek(1) << "\n";
-    if (cap) {
-      auto capPc = cp->peek(1);
-      auto file = colToFile(capPc->getCol());
-      auto rank = rowToRank(capPc->getRow());
-      if (capPc->isCaptured())
-        cout << "captured: " << capPc->getType() << " on " << file << rank << "\n";
-    } else {
-      cout << "no capture\n";
-    }
   // illegal move
   } else {
     cout << "illegal move!\n";
     td = {-1, -1};
   }
+}
+
+// check wether a given check can be resolved
+bool resolveCheck(vector<vector<Piece*>>& bd, bool white) {
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      auto current = bd[row][col];
+      // get every piece of given color
+      if (current && current->isWhite() == white) {
+        for (int rr = 0; rr < 8; rr++) {
+          for (int cc = 0; cc < 8; cc++) {
+            if (current->isValid(bd, rr, cc)) {
+              auto pct = bd[rr][cc];
+              if (!pct || pct->isWhite() != white) {
+                // make move and test for check
+                bd[rr][cc] = current;
+                current->makeMove(rr, cc);
+                if (!check(bd, white)) {
+                  bd[rr][cc] = pct;
+                  current->makeMove(row, col);
+                  return true;
+                } else {
+                  bd[rr][cc] = pct;
+                  current->makeMove(row, col);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// get opponents king coordinates
+pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white) {
+  Piece* king;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      auto current = bd[row][col];
+      if (current && current->getType() == 'K' &&
+          current->isWhite() == white) {
+        king = current;
+      }
+    }
+  }
+  pair<int, int> coord = make_pair(king->getRow(), king->getCol());
+  return coord;
 }
 
 // reset board for new game

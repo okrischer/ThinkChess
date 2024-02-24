@@ -31,6 +31,7 @@ public:
       node = node->next;
       delete curr;
     }
+    delete node;
   }
 
   // size returns the current size of the list.
