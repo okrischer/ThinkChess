@@ -1,6 +1,5 @@
 #include "pieces.hpp"
 #include <vector>
-using namespace std;
 
 bool King::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
   bool valid = abs(r-row) <= 1 && abs(c-col) <= 1;

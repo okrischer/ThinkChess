@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 
+using namespace std;
+
 // public interface for pieces
 class Piece {
 public:
@@ -11,7 +13,7 @@ public:
   virtual int getRow() = 0;
   virtual int getCol() = 0;
   virtual void makeMove(int r, int c) = 0;
-  virtual bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) = 0;
+  virtual bool isValid(vector<vector<Piece*>>& bd, int r, int c) = 0;
 };
 
 
@@ -27,7 +29,7 @@ public:
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -50,7 +52,7 @@ public:
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -73,7 +75,7 @@ public:
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -96,7 +98,7 @@ public:
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -119,7 +121,7 @@ public:
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -142,7 +144,7 @@ public:
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;

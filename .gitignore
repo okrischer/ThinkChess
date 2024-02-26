@@ -1,6 +1,6 @@
 .cache/
 build/
-doc/_minted-Main/
+doc/_minted-ThinkChess++/
 *.aux
 *.bbl
 *.bcf
@@ -10,6 +10,7 @@ doc/_minted-Main/
 *.gz
 *.log
 *.out
+*.pdf
 *.swp
 *.toc
 *.xml

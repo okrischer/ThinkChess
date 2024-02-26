@@ -1,7 +1,5 @@
 #include <SFML/Graphics.hpp>
 #include "pieces.hpp"
-#include "moves.hpp"
-#include "list.hpp"
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -9,6 +7,74 @@
 
 using namespace std;
 
+pair<int, int> getField(int x, int y) {
+  int fx = x / 80;
+  int fy = y / 80;
+  auto field = make_pair(fy, fx);
+  return field;
+}
+
+void setValidMoves(vector<vector<Piece*>>& bd,
+                   vector<vector<short>>& vm,
+                   Piece* pc)
+{
+  if (!pc) return;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      if (pc->isValid(bd, row, col)) {
+        auto current = bd[row][col];
+        if (!current) vm[row][col] = 1;
+        else if (pc->isWhite() != current->isWhite()) vm[row][col] = 2;
+      }
+    }
+  }
+}
+
+void resetBoard(vector<vector<Piece*>>& bd) {
+  // reset board
+  for (auto rank : bd) {
+    for (auto piece : rank) {
+      delete piece;
+    }
+  }
+  // set board to initial position
+  // rank 8 (black)
+  bd[0][0] = new Rook(0,0,0);
+  bd[0][1] = new Knight(0,0,1);
+  bd[0][2] = new Bishop(0,0,2);
+  bd[0][3] = new Queen(0,0,3);
+  bd[0][4] = new King(0,0,4);
+  bd[0][5] = new Bishop(0,0,5);
+  bd[0][6] = new Knight(0,0,6);
+  bd[0][7] = new Rook(0,0,7);
+  // rank 7 (black)
+  bd[1][0] = new Pawn(0,1,0);
+  bd[1][1] = new Pawn(0,1,1);
+  bd[1][2] = new Pawn(0,1,2);
+  bd[1][3] = new Pawn(0,1,3);
+  bd[1][4] = new Pawn(0,1,4);
+  bd[1][5] = new Pawn(0,1,5);
+  bd[1][6] = new Pawn(0,1,6);
+  bd[1][7] = new Pawn(0,1,7);
+  // rank 2 (white)
+  bd[6][0] = new Pawn(1,6,0);
+  bd[6][1] = new Pawn(1,6,1);
+  bd[6][2] = new Pawn(1,6,2);
+  bd[6][3] = new Pawn(1,6,3);
+  bd[6][4] = new Pawn(1,6,4);
+  bd[6][5] = new Pawn(1,6,5);
+  bd[6][6] = new Pawn(1,6,6);
+  bd[6][7] = new Pawn(1,6,7);
+  // rank 1 (white)
+  bd[7][0] = new Rook(1,7,0);
+  bd[7][1] = new Knight(1,7,1);
+  bd[7][2] = new Bishop(1,7,2);
+  bd[7][3] = new Queen(1,7,3);
+  bd[7][4] = new King(1,7,4);
+  bd[7][5] = new Bishop(1,7,5);
+  bd[7][6] = new Knight(1,7,6);
+  bd[7][7] = new Rook(1,7,7);
+}
 
 int main() {
   sf::ContextSettings settings;
@@ -20,32 +86,14 @@ int main() {
 
   window.setFramerateLimit(10);
 
-  // gamestate, set to play
-  short state = 1;
-
   // matrix of pieces representing the board
   vector<vector<Piece*>> board(8, vector<Piece*>(8));
 
   // matrix of valid moves for display
   vector<vector<short>> validMoves(8, vector<short>(8, 0));
 
-  // list of moves, used as a stack
-  auto* moves = new list::List<string>;
-
-  // list of captured pieces, used as a stack
-  auto* captured = new list::List<Piece*>;
-
-  // player to turn, starting with white
-  bool player = true;
-
-  // touched field for making moves
-  pair<int, int> touched{-1, -1};
-
-  // checkmate
-  pair<int, int> checkmate{-1, -1};
-
   // initialize board
-  resetBoard(board, moves, captured);
+  resetBoard(board);
 
   // board sprite
   sf::Texture bi;
@@ -108,18 +156,6 @@ int main() {
   // marker for valid moves
   sf::CircleShape valid(20.f);
 
-  //marker for active piece
-  sf::RectangleShape frame(sf::Vector2f(63.f, 60.f));
-  frame.setFillColor(sf::Color(200, 200, 200, 50));
-  frame.setOutlineThickness(12.f);
-  frame.setOutlineColor(sf::Color(100, 100, 0));
-
-  //marker for checkmate
-  sf::RectangleShape cm(sf::Vector2f(63.f, 60.f));
-  cm.setFillColor(sf::Color(200, 200, 200, 50));
-  cm.setOutlineThickness(12.f);
-  cm.setOutlineColor(sf::Color(200, 0, 0));
-
   // game loop
   while (window.isOpen()) {
     // event loop
@@ -133,25 +169,11 @@ int main() {
           pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
           setValidMoves(board, validMoves, board[f.first][f.second]);
         }
-        if (event.mouseButton.button == sf::Mouse::Left) {
-          if (state == 1) {
-            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-            if (touched.first == -1) touched = f;
-            else if (f == touched) touched = {-1, -1};
-          }
-        }
       }
       // mouse button released
       if (event.type == sf::Event::MouseButtonReleased) {
         if (event.mouseButton.button == sf::Mouse::Right) {
           validMoves = vector<vector<short>>(8, vector<short>(8, 0));
-        }
-        if (event.mouseButton.button == sf::Mouse::Left) {
-          if (state == 1) {
-            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-            if (touched.first != -1 && touched != f)
-              makeMove(board, moves, captured, touched, f, player, checkmate);
-          }
         }
       }
     } // end event loop
@@ -184,14 +206,6 @@ int main() {
             piece->isWhite() ? pc = wp : pc = bp;
             break;
           }
-          if (row == touched.first && col == touched.second) {
-            frame.setPosition(col*80.f + 10.f, row*80.f + 10.f);
-            window.draw(frame);
-          }
-          if (row == checkmate.first && col == checkmate.second) {
-            cm.setPosition(col*80.f + 10.f, row*80.f + 10.f);
-            window.draw(cm);
-          }
           pc.setPosition(col*80.f + 10.f, row*80.f + 10.f);
           window.draw(pc);
         }
@@ -210,9 +224,6 @@ int main() {
     }
     // display frame
     window.display();
-
-    // stop game when checkmate
-    if (checkmate.first != -1) state = 0;
 
   } // end game loop
 } // end main

@@ -208,12 +208,10 @@ public:
   virtual char getType() = 0;
   virtual char getValue() = 0;
   virtual bool isWhite() = 0;
-  virtual bool isCaptured() = 0;
   virtual int getRow() = 0;
   virtual int getCol() = 0;
-  virtual void capture() = 0;
-  virtual bool isValid(std::vector<std::vector<Piece*>>& bd,
-                       int r, int c) = 0;
+  virtual void makeMove(int r, int c) = 0;
+  virtual bool isValid(vector<vector<Piece*>>& bd, int r, int c) = 0;
 };
 \end{cpp}
 
@@ -239,23 +237,21 @@ The concrete types for \mintinline{cpp}{Piece} are implemented like so:
 class King : public Piece {
 public:
   ~King() {}
-  King(bool w, int r, int c) : type{'K'}, white{w}, value{0},
-                              captured{false}, row{r}, col{c} {}
+  King(bool w, int r, int c) :
+    type{'K'}, white{w}, value{0}, row{r}, col{c} {}
 
   char getType() override { return type; }
   char getValue() override { return value; }
   bool isWhite() override { return white; }
-  bool isCaptured() override { return captured; }
   int getRow() override { return row; }
   int getCol() override { return col; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c)
-    override;
+  void makeMove(int r, int c) override { row = r; col = c; }
+  bool isValid(vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
   bool white;
   short value;
-  bool captured;
   int row;
   int col;
 };
@@ -279,8 +275,9 @@ it initializes a new instance with its type (which we need only for drawing the 
 the color of the piece (white or black), its value, and the current position
 of the piece (the row and column of the piece in the board matrix).
 
-The following member functions (7-12) are just \emph{getters} to retrieve the
+The following member functions (7-11) are just \emph{getters} to retrieve the
 \mintinline{cpp}{private} member types.
+We'll need the \mintinline{cpp}{makeMove} function in the next chapter, it shouldn't concern us for now.
 
 With the derived \mintinline{cpp}{Piece} types in place, we can initially fill the board matrix:
 
@@ -580,7 +577,6 @@ The function \mintinline{cpp}{isValid} for the king is implemented in the file
 \begin{cpp*}{linenos}
 #include "pieces.hpp"
 #include <vector>
-using namespace std;
 
 bool King::isValid(vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = abs(r-row) <= 1 && abs(c-col) <= 1;
