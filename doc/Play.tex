@@ -489,10 +489,13 @@ void makeMove(vector<vector<Piece*>>& bd,
 }
 \end{cpp*}
 
-There's nothing new in lines (1-37).
+We have an extra parameter \mintinline{cpp}{pair<int, int>& checkmate} for keeping track of \emph{checkmate}.
+Besides, There's nothing new in lines (1-37).
+
 Then test, wether the move gives the own king check (39), and if it does, abort the move (44-45), as
-this is not allowed.\\
+this is not allowed.
 But, before that, reset the already made move (41-43).
+Notice, that we had to make the move in the first place in order to allow the test for check.
 
 If the move gives the opponents king check (47), test wether the check could possibly be
 resolved (48), and if so, add the marker `+' to the move (indicating check, 49).\\
@@ -620,6 +623,236 @@ Castling is permitted only if
   \item the squares between the king and the rook are vacant
   \item the king does not leave, cross over, or finish on a square attacked by an enemy piece.
 \end{itemize}
+
+We implement the logic for \emph{castling} with a function called \texttt{castling}:
+
+\begin{cpp*}{linenos}
+char castling(vector<vector<Piece*>>& bd,
+              Piece* king, pair<int, int> to)
+{
+  if (check(bd, king->isWhite())) return 'N'; // king is in check
+  if (king->isWhite()) { // white
+    if (king->getRow() == 7 && king->getCol() == 4) {
+      // TODO: king has not yet moved
+      if (to.first == 7 && to.second == 6) { // kingside
+        auto rook = bd[7][7];
+        if (!rook || rook->getType() != 'R'
+                  || rook->isWhite() != king->isWhite()) {
+          // TODO: rook has moved
+          return 'N';
+        }
+        auto pc1 = bd[7][5];
+        auto pc2 = bd[7][6];
+        if (pc1 || pc2) return 'N'; // fields occupied
+        else {
+          // test for check
+          bd[7][5] = king;
+          king->makeMove(7, 5);
+          if (check(bd, king->isWhite())) {
+            bd[7][4] = king;
+            king->makeMove(7, 4);
+            bd[7][5] = nullptr;
+            return 'N';
+          } else {
+            bd[7][4] = king;
+            king->makeMove(7, 4);
+            bd[7][5] = nullptr;
+          }
+          bd[7][6] = king;
+          king->makeMove(7, 6);
+          if (check(bd, king->isWhite())) {
+            bd[7][4] = king;
+            king->makeMove(7, 4);
+            bd[7][6] = nullptr;
+            return 'N';
+          } else {
+            bd[7][4] = king;
+            king->makeMove(7, 4);
+            bd[7][6] = nullptr;
+          }
+          return 'K';
+        }
+      } else if (to.first == 7 && to.second == 2) {
+      // --- snip queenside ---
+      }
+    }
+  } else {
+  // --- snip black ---
+  }
+  return 'N';
+}
+\end{cpp*}
+
+First, test wether the king is currently in check, and if so, abort with negative result (4).
+Then, test for the white king (5): we have to test the kings separately, as they sit on different ranks.
+
+Next, test wether the king is on its initial position (6).
+Observe, that for now, this test is not complete: the king could have moved from and back to its initial
+position.
+Since we will learn to process stored moves only in the next chapter, there is no way to complete the
+test for now.
+But we must not forget to make this right, so I've left a \texttt{TODO} comment here.
+
+Next, test for kingside castling (8): if there's no rook of the same color on its initial position (10-11),
+abort with negative result (13).
+Observe, that we have the same issue as with the king before, so I've added a \texttt{TODO} marker as well.
+
+Then, test wether the fields between the king and the rook are occopied (17), and if not, continue
+with the tests for check for these fields (18).
+For that, we move the king to the first field (20-21) and test for check (22).
+If it is in check, abort with negative result (26), after undoing the king move (23-25), since we don't
+want to actually move the king.
+Otherwise reset the move as well (27-31), and test the second field for check (32-43), following the logic
+from the first field.
+
+If there are no pieces at both fields, and the king would not be in check at those fields, return
+positive result \texttt{K} for kingside castling (44).
+
+Then, repeat the process for queenside castling (46), and finally both processes for the black king (51).
+If no valid castling position was found, return negative result (53).
+
+With that, we have a lot of redundant code, only differing in the ranks of the king.
+Of course, one could write that in a more compact way.
+But that could lead to an overly clever solution, which would be hard to understand for someone without
+implicit knowledge of what's going on, even for your future self.
+So, I decided to leave the code this way and to make every step explicit.
+
+The compiler won't care about lengthy code anyway.
+On the contrary, when optimization is enabled (e.g. with the flag \texttt{-O3}),
+the compiler will create the most efficient machine code possible.
+
+By the way, if you want to compile the project in release mode with optimization enabled, you can call
+\begin{verbatim}
+<cmake .. -DCMAKE_BUILD_TYPE=Release>
+\end{verbatim}
+from the \texttt{build} directory, followed by \texttt{<cmake -build .>}\\
+This will recompile the whole project, and every time, you call cmake after that, the project will be
+compiled in release mode, unless you decide to delete the build directory and re-create it with
+\texttt{cmake -B build} from the root folder.
+
+Having \texttt{castling} in place, we can use it inside our \texttt{makeMove} function:
+
+\begin{cpp*}{linenos}
+// already castled, 0 = no, 1 = white, 2 = black, 3 = both
+short castled = 0;
+
+void makeMove(vector<vector<Piece*>>& bd,
+              list::List<string>* mv,
+              list::List<Piece*>* cp,
+              pair<int, int>& td,
+              pair<int, int> to,
+              bool& player,
+              pair<int, int>& checkmate,
+              short& castled)
+{
+  auto pcf = bd[td.first][td.second];
+  auto pct = bd[to.first][to.second];
+  bool cap = false;
+  if (!pcf) {
+    cout << "no piece under cursor\n";
+    td = {-1, -1};
+    return;
+  }
+  if (pcf->isWhite() != player) {
+    cout << "it's not your turn\n";
+    td = {-1, -1};
+    return;
+  }
+  // castling
+  short cast = player ? 1 : 2;
+  if (castled < 3 && castled != cast && pcf->getType() == 'K' && !pct) {
+    string move = "";
+    char form = castling(bd, pcf, to);
+    if (form == 'K') {
+      castled = castled > 0 ? 3 : cast;
+      move = "0-0";
+      // make king move
+      bd[td.first][td.second+2] = pcf;
+      pcf->makeMove(td.first, td.second+2);
+      bd[td.first][td.second] = nullptr;
+      // make rook move
+      auto rook = bd[td.first][7];
+      bd[td.first][td.second+1] = rook;
+      rook->makeMove(td.first, td.second+1);
+      bd[td.first][7] = nullptr;
+      if (check(bd, !player)) { // gives opponent check
+        if (resolveCheck(bd, !player)) {
+          move.append(1, '+');
+        } else { // cannot get out of check
+          move.append(1, '#');
+          mv->push_front(move);
+          cout << mv->peek(1) << "\n";
+          checkmate = getKing(bd, !player);
+          return;
+        }
+      }
+      // complete move
+      mv->push_front(move);
+      cout << mv->peek(1) << "\n";
+      td = {-1, -1};
+      player = !player;
+      return;
+    } else if (form == 'Q') {
+      castled = castled > 0 ? 3 : cast;
+      move = "0-0-0";
+      // make king move
+      bd[td.first][td.second-2] = pcf;
+      pcf->makeMove(td.first, td.second-2);
+      bd[td.first][td.second] = nullptr;
+      // make rook move
+      auto rook = bd[td.first][0];
+      bd[td.first][td.second-1] = rook;
+      rook->makeMove(td.first, td.second-1);
+      bd[td.first][0] = nullptr;
+      if (check(bd, !player)) { // gives opponent check
+        if (resolveCheck(bd, !player)) {
+          move.append(1, '+');
+        } else { // cannot get out of check
+          move.append(1, '#');
+          mv->push_front(move);
+          cout << mv->peek(1) << "\n";
+          checkmate = getKing(bd, !player);
+          return;
+        }
+      }
+      // complete move
+      mv->push_front(move);
+      cout << mv->peek(1) << "\n";
+      td = {-1, -1};
+      player = !player;
+      return;
+    } // else do nothing and continue with check for valid move
+  }
+  // --- snip processing other moves ---
+}
+\end{cpp*}
+
+We have a new variable \texttt{castled} inside the main function (2), and a respective parameter
+in the \texttt{makeMove} function (11) for keeping track of castling.
+
+The new part starts on line (27): we define a local variable \texttt{cast} and set it to the player,
+whose turn it is.
+Then we test, wether that player has already castled, and wether the piece to move is a king and the
+target field is not occupied (28).
+Then, test wether castling is possible for that king (30), and if it's a kingside castling (31),
+do the following:
+\begin{enumerate}
+  \item indicate, that the player has castled (32)
+  \item set the correct notation for the move (33)
+  \item make the king move by setting it 2 fields to the right (35-37)
+  \item make the rook move by setting it to the left of the king (39-42)
+  \item test wether the move gives the opponents king check (43)
+  \item if so, test wether the check could be resolved by the opponent (44)
+  \item if so, complement the move's notation with a \texttt{+}
+  \item otherwise, it is checkmate: complete the move and stop the game (46-52)
+  \item complete the move (55-59)
+\end{enumerate}
+
+Then, repeat the steps above for queenside castling (60-89). I've left out the subsequent code, as
+it does not differ from the previous version.
+
+With that, we can perform (almost) correct castling for both players; we'll revisit the code for
+the \texttt{castling} method in the next chapter.
 
 \subsection{Promotion}
 

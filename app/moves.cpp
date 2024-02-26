@@ -1,5 +1,6 @@
 #include "moves.hpp"
 #include <iostream>
+#include <stdexcept>
 #include <utility>
 
 // convert columns to files
@@ -72,12 +73,16 @@ bool check(vector<vector<Piece*>>& bd, bool white) {
       }
     }
   }
-  for (int row = 0; row < 8; row++) {
-    for (int col = 0; col < 8; col++) {
-      auto current = bd[row][col];
-      if (current && current->isWhite() != white) {
-        if (current->isValid(bd, king->getRow(), king->getCol())) {
-          check = true;
+  if (!king) {
+    throw domain_error{"found no king in check()"};
+  } else {
+    for (int row = 0; row < 8; row++) {
+      for (int col = 0; col < 8; col++) {
+        auto current = bd[row][col];
+        if (current && current->isWhite() != white) {
+          if (current->isValid(bd, king->getRow(), king->getCol())) {
+            check = true;
+          }
         }
       }
     }
@@ -425,6 +430,7 @@ bool resolveCheck(vector<vector<Piece*>>& bd, bool white) {
 // get opponents king coordinates
 pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white) {
   Piece* king;
+  pair<int, int> coord;
   for (int row = 0; row < 8; row++) {
     for (int col = 0; col < 8; col++) {
       auto current = bd[row][col];
@@ -434,7 +440,11 @@ pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white) {
       }
     }
   }
-  pair<int, int> coord = make_pair(king->getRow(), king->getCol());
+  if (!king) {
+    throw domain_error{"found no king in getKing()"};
+  } else {
+    coord = make_pair(king->getRow(), king->getCol());
+  }
   return coord;
 }
 
@@ -455,13 +465,41 @@ void resetBoard(vector<vector<Piece*>>& bd,
     }
   }
   // set board to initial position
-  // rank 1 (white)
-  bd[0][2] = new Rook(0,0,2);
+  // rank 8 (black)
+  bd[0][0] = new Rook(0,0,0);
+  bd[0][1] = new Knight(0,0,1);
+  bd[0][2] = new Bishop(0,0,2);
+  bd[0][3] = new Queen(0,0,3);
   bd[0][4] = new King(0,0,4);
-  bd[0][5] = new Rook(0,0,5);
+  bd[0][5] = new Bishop(0,0,5);
+  bd[0][6] = new Knight(0,0,6);
+  bd[0][7] = new Rook(0,0,7);
+  // rank 7 (black)
+  bd[1][0] = new Pawn(0,1,0);
+  bd[1][1] = new Pawn(0,1,1);
+  bd[1][2] = new Pawn(0,1,2);
+  bd[1][3] = new Pawn(0,1,3);
+  bd[1][4] = new Pawn(0,1,4);
+  bd[1][5] = new Pawn(0,1,5);
+  bd[1][6] = new Pawn(0,1,6);
+  bd[1][7] = new Pawn(0,1,7);
+  // rank 2 (white)
+  bd[6][0] = new Pawn(1,6,0);
+  bd[6][1] = new Pawn(1,6,1);
+  bd[6][2] = new Pawn(1,6,2);
+  bd[6][3] = new Pawn(1,6,3);
+  bd[6][4] = new Pawn(1,6,4);
+  bd[6][5] = new Pawn(1,6,5);
+  bd[6][6] = new Pawn(1,6,6);
+  bd[6][7] = new Pawn(1,6,7);
   // rank 1 (white)
   bd[7][0] = new Rook(1,7,0);
+  bd[7][1] = new Knight(1,7,1);
+  bd[7][2] = new Bishop(1,7,2);
+  bd[7][3] = new Queen(1,7,3);
   bd[7][4] = new King(1,7,4);
+  bd[7][5] = new Bishop(1,7,5);
+  bd[7][6] = new Knight(1,7,6);
   bd[7][7] = new Rook(1,7,7);
 }
 
