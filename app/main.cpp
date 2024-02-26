@@ -44,6 +44,9 @@ int main() {
   // checkmate
   pair<int, int> checkmate{-1, -1};
 
+  // already castled, 0 = no, 1 = white, 2 = black, 3 = both
+  short castled = 0;
+
   // initialize board
   resetBoard(board, moves, captured);
 
@@ -127,33 +130,33 @@ int main() {
       if (event.type == sf::Event::Closed) {
         window.close();
       }
-      // mouse button pressed
-      if (event.type == sf::Event::MouseButtonPressed) {
-        if (event.mouseButton.button == sf::Mouse::Right) {
-          pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-          setValidMoves(board, validMoves, board[f.first][f.second]);
-        }
-        if (event.mouseButton.button == sf::Mouse::Left) {
-          if (state == 1) {
+      // game is running in play mode
+      if (state == 1) {
+        // mouse button pressed
+        if (event.type == sf::Event::MouseButtonPressed) {
+          if (event.mouseButton.button == sf::Mouse::Right) {
+            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+            setValidMoves(board, validMoves, board[f.first][f.second]);
+          }
+          if (event.mouseButton.button == sf::Mouse::Left) {
             pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
             if (touched.first == -1) touched = f;
             else if (f == touched) touched = {-1, -1};
           }
         }
-      }
-      // mouse button released
-      if (event.type == sf::Event::MouseButtonReleased) {
-        if (event.mouseButton.button == sf::Mouse::Right) {
-          validMoves = vector<vector<short>>(8, vector<short>(8, 0));
-        }
-        if (event.mouseButton.button == sf::Mouse::Left) {
-          if (state == 1) {
+        // mouse button released
+        if (event.type == sf::Event::MouseButtonReleased) {
+          if (event.mouseButton.button == sf::Mouse::Right) {
+            validMoves = vector<vector<short>>(8, vector<short>(8, 0));
+          }
+          if (event.mouseButton.button == sf::Mouse::Left) {
             pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
             if (touched.first != -1 && touched != f)
-              makeMove(board, moves, captured, touched, f, player, checkmate);
+              makeMove(board, moves, captured, touched,
+                       f, player, checkmate, castled);
           }
         }
-      }
+      } // end play mode
     } // end event loop
 
     // draw board

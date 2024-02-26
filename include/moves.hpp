@@ -32,7 +32,8 @@ void makeMove(vector<vector<Piece*>>& bd,
               pair<int, int>& td,
               pair<int, int> to,
               bool& player,
-              pair<int, int>& checkmate);
+              pair<int, int>& checkmate,
+              short& castled);
 
 // test for check
 bool check(vector<vector<Piece*>>& bd, Piece* pc);
@@ -42,6 +43,9 @@ bool resolveCheck(vector<vector<Piece*>>& bd, bool white);
 
 // get opponents king coordinates
 pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white);
+
+// test wether castling is possible
+char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to);
 
 // reset board for new game
 void resetBoard(vector<vector<Piece*>>& bd,
