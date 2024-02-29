@@ -10,7 +10,6 @@ doc/_minted-ThinkChess++/
 *.gz
 *.log
 *.out
-*.pdf
 *.swp
 *.toc
 *.xml

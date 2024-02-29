@@ -25,6 +25,7 @@ void setValidMoves(vector<vector<Piece*>>& bd,
                    vector<vector<short>>& vm,
                    Piece* pc);
 
+
 // make a move
 void makeMove(vector<vector<Piece*>>& bd,
               list::List<string>* mv,
@@ -35,11 +36,12 @@ void makeMove(vector<vector<Piece*>>& bd,
               pair<int, int>& checkmate,
               short& castled);
 
+
 // test for check
 bool check(vector<vector<Piece*>>& bd, Piece* pc);
 
-// test wether a given check can be resolved
-bool resolveCheck(vector<vector<Piece*>>& bd, bool white);
+// check wether a given check can be resolved
+bool resolveCheck(vector<vector<Piece*>>& bd, bool player);
 
 // get opponents king coordinates
 pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white);
@@ -51,3 +53,7 @@ char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to);
 void resetBoard(vector<vector<Piece*>>& bd,
                  list::List<string>* mv,
                  list::List<Piece*>* cp);
+
+
+// print board for debug
+void printBoard(vector<vector<Piece*>>& bd);

@@ -117,7 +117,7 @@ int main() {
   frame.setOutlineThickness(12.f);
   frame.setOutlineColor(sf::Color(100, 100, 0));
 
-  //marker for checkmate
+  //marker for mate
   sf::RectangleShape cm(sf::Vector2f(63.f, 60.f));
   cm.setFillColor(sf::Color(200, 200, 200, 50));
   cm.setOutlineThickness(12.f);

@@ -283,6 +283,7 @@ for (int row = 0; row < 8; row++) {
 \end{cpp}
 
 \section{Special Positions}\label{sec:specpos}
+\subsection{Check and checkmate}
 
 The most prominent position in a game is the \href{https://en.wikipedia.org/wiki/Check_(chess)}{check},
 where the king is under immediate attack.
@@ -601,6 +602,23 @@ the \emph{Scholar's mate}):
 \includegraphics[width=.5\linewidth]{img/checkmate.jpg}
 \end{center}
 
+\subsection{Stalemate}
+
+\href{https://en.wikipedia.org/wiki/Stalemate}{Stalemate} is a situation in chess where the player,
+whose turn it is to move, is not in check but has no legal move.
+Stalemate immediately results in a draw (i.e. the game is over and both players are credited half
+a point).
+During the endgame, stalemate is a resource that can enable the player with the inferior position
+to draw the game rather than lose.
+
+Stalemate is mucher harder to detect than checkmate: as the king has not been given check,
+we cannot use our \texttt{check} and \texttt{resolveCheck} functions for this position.
+Of course, we could try to do something similar, but only with a much higher expense.
+But, as stalemates are actually much rarer than checkmates, I decided to not spend this effort for now.
+
+So, when playing a game with the app, both players have to agree to stalemate (and with that to a draw),
+like they would have to in a tournament.
+
 \section{Special Moves}\label{sec:specmoves}
 
 To complete this chapter, we will now implement the missing \emph{special} moves for
@@ -623,6 +641,20 @@ Castling is permitted only if
   \item the squares between the king and the rook are vacant
   \item the king does not leave, cross over, or finish on a square attacked by an enemy piece.
 \end{itemize}
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{img/castling1.jpg}
+\end{center}
+
+Assuming in the diagramm above, that neither of the players has casteld yet, they could move
+like so:
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{img/castling2.jpg}
+\end{center}
+
+White has castled to the queenside (indicated with \texttt{0-0-0}), while black has castled to
+the kingside (indicated with \texttt{0-0}).
 
 We implement the logic for \emph{castling} with a function called \texttt{castling}:
 
@@ -721,12 +753,10 @@ The compiler won't care about lengthy code anyway.
 On the contrary, when optimization is enabled (e.g. with the flag \texttt{-O3}),
 the compiler will create the most efficient machine code possible.
 
-By the way, if you want to compile the project in release mode with optimization enabled, you can call
-\begin{verbatim}
-<cmake .. -DCMAKE_BUILD_TYPE=Release>
-\end{verbatim}
-from the \texttt{build} directory, followed by \texttt{<cmake -build .>}\\
-This will recompile the whole project, and every time, you call cmake after that, the project will be
+By the way, if you want to compile the project in release mode with optimization enabled,
+you can call \texttt{<cmake .. -DCMAKE\_BUILD\_TYPE=Release>}
+from the \texttt{build} directory, followed by \texttt{<cmake -build .>}.\\
+This will recompile the whole project, and every time, you call \texttt{cmake} after that, the project will be
 compiled in release mode, unless you decide to delete the build directory and re-create it with
 \texttt{cmake -B build} from the root folder.
 
@@ -856,5 +886,96 @@ the \texttt{castling} method in the next chapter.
 
 \subsection{Promotion}
 
+\href{https://en.wikipedia.org/wiki/Promotion_(chess)}{Promotion} is the replacement of a pawn with a
+new piece when the pawn is moved to its last rank.
+The player replaces the pawn immediately with a queen, rook, bishop, or knight of the same color.
+The new piece does not have to be a previously captured piece.
+
+Promotion is almost always to a queen (a.k.a \emph{queening}), as it is the most powerful piece.
+Since we don't have a sufficient GUI yet (so the player cannot choose a different piece), we will
+restrict promotion to queening for now.
+
+With that restriction, it is quite easy to implement promotion inside our \texttt{makeMove} function:
+
+\begin{cpp*}{linenos}
+// valid move?
+if (pcf->isValid(bd, to.first, to.second)) {
+// can capture?
+if (pct && pct->isWhite() != pcf->isWhite()) {
+  cap = true;
+  cp->push_front(pct);
+} else if (pct) { // same color
+  cout << "illegal move!\n";
+  td = {-1, -1};
+  return;
+}
+
+string move = convertFromBoard(cap, pcf, to);
+
+// promotion
+if (pcf && pcf->getType() == 'P') {
+  if (pcf->isWhite() && pcf->getRow() == 1) { // white
+    pcf = new Queen(1, pcf->getRow(), pcf->getCol());
+    move.append("=Q");
+  } else if (!pcf->isWhite() && pcf->getRow() == 6) { // black
+    pcf = new Queen(0, pcf->getRow(), pcf->getCol());
+    move.append("=Q");
+  }
+} // end promotion
+
+// legal move
+bd[to.first][to.second] = pcf;
+bd[td.first][td.second] = nullptr;
+pcf->makeMove(to.first, to.second);
+\end{cpp*}
+
+We have to put the new code (15-24) inside the check for valid moves, just before making the move (27-29).
+The code tests wether the piece to move is a pawn (16), and wether it is currently placed on the last but one
+rank for its color (17, 20).
+If so, the pawn is simply replaced with a queen of the same color (18, 21) and the moves notation is
+completed accordingly (19, 22).
+
+\begin{center}
+\includegraphics[width=.5\linewidth]{img/queening.jpg}
+\end{center}
+
+When the pawn on \texttt{b7} captures the rook on \texttt{c8} in the diagram above,
+our app will promote the pawn to a queen and also detects the check, reporting this move:
+\texttt{b7xc8=Q+}.
+
 \subsection{En passant}
+
+The last special move, we want to cover, is a pawns move called
+\href{https://en.wikipedia.org/wiki/En_passant}{en passant}.
+
+The move describes the capture by a pawn of an enemy pawn on the same rank and an adjacent file,
+that has just made an initial two-square advance.\\
+The capturing pawn moves to the square that the enemy pawn passed over, as if the enemy pawn had
+advanced only one square.
+
+The rule ensures that a pawn cannot use its two-square move to safely skip past an enemy pawn. 
+
+But, since capturing \emph{en passant} is permitted only on the turn immediately after the
+two-square advance, we would need to investigate the moves history for this.
+As we have no means to do that for now, we'll implement that move only in a later chapter,
+marking it with \texttt{TODO} in the meanwhile.
+
+\section{Showing valid moves (revisited)}
+
+In section~\ref{sec:validmoves} we learned how to show the valid moves for any piece,
+by pressing the right mouse button on it.
+
+So far, this will only display the valid moves in general, ignoring special positions
+(§~\ref{sec:specpos}) and special moves (§~\ref{sec:specmoves}).
+So, we will not see the moves for castling when clicking on a king, but we'll see moves,
+which are not allowed in the current position (whenever the move would give check to the own king).
+
+We could certainly resolve this, but this would also mean a major redesign of our display logic,
+and would not bear any other benefits for the current game behavior.
+So I decided, to leave it as it is for now.
+
+On the bright side, this behavior has a positve didactic effect for learners: if you want to make
+a move, shown as valid, and the app refuses that move (for good reasons), you have to analyze the position
+for yourself and find the reason why.
+In most of theses cases, you'd have missed a given check.
 
