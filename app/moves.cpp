@@ -1,6 +1,5 @@
 #include "moves.hpp"
 #include "pieces.hpp"
-#include "display.hpp"
 #include <iostream>
 #include <stdexcept>
 #include <utility>
@@ -259,7 +258,6 @@ char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to) {
 
 // make a move
 void makeMove(vector<vector<Piece*>>& bd,
-              Display& display,
               list::List<string>* mv,
               list::List<Piece*>* cp,
               pair<int, int>& td,
@@ -317,7 +315,6 @@ void makeMove(vector<vector<Piece*>>& bd,
       cout << mv->peek(1) << "\n";
       td = {-1, -1};
       player = !player;
-      display.setPlayer(player);
       return;
     } else if (form == 'Q') {
       castled = castled > 0 ? 3 : cast;
@@ -347,7 +344,6 @@ void makeMove(vector<vector<Piece*>>& bd,
       cout << mv->peek(1) << "\n";
       td = {-1, -1};
       player = !player;
-      display.setPlayer(player);
       return;
     }
   } // end castling
@@ -412,7 +408,6 @@ void makeMove(vector<vector<Piece*>>& bd,
     cout << mv->peek(1) << "\n";
     td = {-1, -1};
     player = !player;
-    display.setPlayer(player);
     return;
 
   // illegal move

@@ -1,4 +1,4 @@
-#include "display.hpp"
+#include <SFML/Graphics.hpp>
 #include "pieces.hpp"
 #include "moves.hpp"
 #include "list.hpp"
@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <chrono>
 
 using namespace std;
 
@@ -22,6 +23,11 @@ int main() {
 
   // gamestate, set to play
   short state = 1;
+
+  // start timer
+  chrono::steady_clock::time_point last;
+  last = chrono::steady_clock::now();
+  chrono::steady_clock::time_point now;
 
   // matrix of pieces representing the board
   vector<vector<Piece*>> board(8, vector<Piece*>(8));
@@ -50,19 +56,21 @@ int main() {
   // initialize board
   resetBoard(board, moves, captured);
 
-  // create the display
-  auto display = Display();
-  display.setPosition(650.f, 0.f);
-
   // board sprite
   sf::Texture bi;
-  bi.loadFromFile("../img/board.jpg");
+  if (!bi.loadFromFile("../img/board.jpg")) {
+    cout << "failed to load the board\n";
+    return 1;
+  }
   sf::Sprite bs;
   bs.setTexture(bi);
 
   // sprites for pieces
   sf::Texture figures;
-  figures.loadFromFile("../img/figures.png");
+  if (!figures.loadFromFile("../img/figures.png")) {
+    cout << "failed to load the figures\n";
+    return 1;
+  }
 
   sf::Sprite wk;
   wk.setTexture(figures);
@@ -127,6 +135,42 @@ int main() {
   cm.setOutlineThickness(12.f);
   cm.setOutlineColor(sf::Color(200, 0, 0));
 
+  // digits for timer
+  sf::Texture d0; sf::Sprite s0;
+  sf::Texture d1; sf::Sprite s1;
+  sf::Texture d2; sf::Sprite s2;
+  sf::Texture d3; sf::Sprite s3;
+  sf::Texture d4; sf::Sprite s4;
+  sf::Texture d5; sf::Sprite s5;
+  sf::Texture d6; sf::Sprite s6;
+  sf::Texture d7; sf::Sprite s7;
+  sf::Texture d8; sf::Sprite s8;
+  sf::Texture d9; sf::Sprite s9;
+  sf::Texture dc; sf::Sprite sc;
+  d0.loadFromFile("../img/LED_digit_0.png");
+  s0.setTexture(d0);
+  s0.setPosition(650.f, 10.f);
+  d1.loadFromFile("../img/LED_digit_1.png");
+  s1.setTexture(d1);
+  d2.loadFromFile("../img/LED_digit_2.png");
+  s2.setTexture(d2);
+  d3.loadFromFile("../img/LED_digit_3.png");
+  s3.setTexture(d3);
+  d4.loadFromFile("../img/LED_digit_4.png");
+  s4.setTexture(d4);
+  d5.loadFromFile("../img/LED_digit_5.png");
+  s5.setTexture(d5);
+  d6.loadFromFile("../img/LED_digit_6.png");
+  s6.setTexture(d6);
+  d7.loadFromFile("../img/LED_digit_7.png");
+  s7.setTexture(d7);
+  d8.loadFromFile("../img/LED_digit_8.png");
+  s8.setTexture(d8);
+  d9.loadFromFile("../img/LED_digit_9.png");
+  s9.setTexture(d9);
+  dc.loadFromFile("../img/LED_colon.png");
+  sc.setTexture(dc);
+
   // game loop
   while (window.isOpen()) {
     // event loop
@@ -161,7 +205,7 @@ int main() {
             if (event.mouseButton.x < 640) {
               pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
               if (touched.first != -1 && touched != f)
-                makeMove(board, display, moves, captured, touched,
+                makeMove(board, moves, captured, touched,
                          f, player, checkmate, castled);
             }
           }
@@ -169,9 +213,16 @@ int main() {
       } // end play mode
     } // end event loop
 
+    // set timer
+    now = chrono::steady_clock::now();
+    if (now - last > 1s) {
+      last = chrono::steady_clock::now();
+    }
+
     window.clear(sf::Color(100, 100, 100));
+
     // draw display
-    window.draw(display);
+    window.draw(s0);
 
     // draw board
     window.draw(bs);
