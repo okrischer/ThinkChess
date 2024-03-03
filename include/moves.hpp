@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pieces.hpp"
+#include "display.hpp"
 #include "list.hpp"
 #include <utility>
 #include <vector>
@@ -28,6 +29,7 @@ void setValidMoves(vector<vector<Piece*>>& bd,
 
 // make a move
 void makeMove(vector<vector<Piece*>>& bd,
+              Display& display,
               list::List<string>* mv,
               list::List<Piece*>* cp,
               pair<int, int>& td,

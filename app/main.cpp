@@ -1,4 +1,4 @@
-#include <SFML/Graphics.hpp>
+#include "display.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
 #include "list.hpp"
@@ -13,7 +13,7 @@ using namespace std;
 int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
-  auto window = sf::RenderWindow{ {640u, 640u},
+  auto window = sf::RenderWindow{ {960u, 640u},
                                   "ThinkChess++",
                                   sf::Style::Default,
                                   settings };
@@ -49,6 +49,10 @@ int main() {
 
   // initialize board
   resetBoard(board, moves, captured);
+
+  // create the display
+  auto display = Display();
+  display.setPosition(650.f, 0.f);
 
   // board sprite
   sf::Texture bi;
@@ -135,13 +139,17 @@ int main() {
         // mouse button pressed
         if (event.type == sf::Event::MouseButtonPressed) {
           if (event.mouseButton.button == sf::Mouse::Right) {
-            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-            setValidMoves(board, validMoves, board[f.first][f.second]);
+            if (event.mouseButton.x < 640) {
+              pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+              setValidMoves(board, validMoves, board[f.first][f.second]);
+            }
           }
           if (event.mouseButton.button == sf::Mouse::Left) {
-            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-            if (touched.first == -1) touched = f;
-            else if (f == touched) touched = {-1, -1};
+            if (event.mouseButton.x < 640) {
+              pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+              if (touched.first == -1) touched = f;
+              else if (f == touched) touched = {-1, -1};
+            }
           }
         }
         // mouse button released
@@ -150,17 +158,24 @@ int main() {
             validMoves = vector<vector<short>>(8, vector<short>(8, 0));
           }
           if (event.mouseButton.button == sf::Mouse::Left) {
-            pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-            if (touched.first != -1 && touched != f)
-              makeMove(board, moves, captured, touched,
-                       f, player, checkmate, castled);
+            if (event.mouseButton.x < 640) {
+              pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
+              if (touched.first != -1 && touched != f)
+                makeMove(board, display, moves, captured, touched,
+                         f, player, checkmate, castled);
+            }
           }
         }
       } // end play mode
     } // end event loop
 
+    window.clear(sf::Color(100, 100, 100));
+    // draw display
+    window.draw(display);
+
     // draw board
     window.draw(bs);
+
     // draw pieces
     for (int row = 0; row < 8; row++) {
       for (int col = 0; col < 8; col++) {
