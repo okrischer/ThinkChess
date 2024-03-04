@@ -21,7 +21,7 @@ pair<int, int> getField(int x, int y);
 string convertFromBoard(bool cap, Piece* from, pair<int, int> to);
 
 // set valid moves for display
-void setValidMoves(vector<vector<Piece*>>& bd,
+void setValidMoves(const vector<vector<Piece*>>& bd,
                    vector<vector<short>>& vm,
                    Piece* pc);
 
@@ -38,13 +38,13 @@ void makeMove(vector<vector<Piece*>>& bd,
 
 
 // test for check
-bool check(vector<vector<Piece*>>& bd, Piece* pc);
+bool check(const vector<vector<Piece*>>& bd, Piece* pc);
 
 // check wether a given check can be resolved
 bool resolveCheck(vector<vector<Piece*>>& bd, bool player);
 
 // get opponents king coordinates
-pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white);
+pair<int, int> getKing(const vector<vector<Piece*>>& bd, bool white);
 
 // test wether castling is possible
 char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to);
@@ -56,4 +56,4 @@ void resetBoard(vector<vector<Piece*>>& bd,
 
 
 // print board for debug
-void printBoard(vector<vector<Piece*>>& bd);
+void printBoard(const vector<vector<Piece*>>& bd);

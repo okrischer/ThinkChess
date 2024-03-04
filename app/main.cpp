@@ -1,53 +1,18 @@
 #include <SFML/Graphics.hpp>
-#include "SFML/Graphics/Color.hpp"
-#include "SFML/Graphics/Sprite.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
 #include "list.hpp"
+#include "display.hpp"
 #include <iostream>
-#include <utility>
-#include <vector>
-#include <string>
 #include <chrono>
+#include <string>
 
 using namespace std;
-
-string getTime(unsigned t) {
-  string result = "";
-  unsigned h = 0;
-  unsigned m = t / 60;
-  unsigned s = t % 60;
-  if (m >= 60) {
-    h = m / 60;
-    m = m % 60;
-  }
-  if (h < 10) {
-    result.append(1, '0');
-    result.append(to_string(h));
-  } else {
-    result.append(to_string(h));
-  }
-  result.append(1, ':');
-  if (m < 10) {
-    result.append(1, '0');
-    result.append(to_string(m));
-  } else {
-    result.append(to_string(m));
-  }
-  result.append(1, ':');
-  if (s < 10) {
-    result.append(1, '0');
-    result.append(to_string(s));
-  } else {
-    result.append(to_string(s));
-  }
-  return result;
-}
 
 int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
-  auto window = sf::RenderWindow{ {960u, 640u},
+  auto window = sf::RenderWindow{ {860, 640u},
                                   "ThinkChess++",
                                   sf::Style::Default,
                                   settings };
@@ -79,6 +44,9 @@ int main() {
   // player to turn, starting with white
   bool player = true;
 
+  // basic evaluation
+  short eval = 0;
+
   // touched field for making moves
   pair<int, int> touched{-1, -1};
 
@@ -88,7 +56,7 @@ int main() {
   // already castled, 0 = no, 1 = white, 2 = black, 3 = both
   short castled = 0;
 
-  // initialize board TODO: reset timers when starting a new game
+  // initialize board TODO: reset timers and eval when starting a new game
   resetBoard(board, moves, captured);
 
   // set font for text display
@@ -109,6 +77,14 @@ int main() {
   sf::Text bTimer = wTimer;
   bTimer.setFillColor(sf::Color::Black);
   bTimer.setPosition(690.f, 40.f);
+
+  // set evaluation
+  sf::Text evalText;
+  evalText.setFont(noto);
+  evalText.setCharacterSize(20);
+  evalText.setFillColor(sf::Color::White);
+  evalText.setString("+/-");
+  evalText.setPosition(740.f, 70.f);
 
   // board sprite
   sf::Texture bi;
@@ -189,6 +165,11 @@ int main() {
   cm.setOutlineThickness(12.f);
   cm.setOutlineColor(sf::Color(200, 0, 0));
 
+  // background for evaluation
+  sf::RectangleShape eb(sf::Vector2f(115.f, 25.f));
+  eb.setFillColor(sf::Color::Black);
+  eb.setPosition(695.f, 70.f);
+
   // marker for aktive player
   sf::CircleShape wActive(10.f);
   wActive.setPosition(650.f, 15.f);
@@ -231,9 +212,26 @@ int main() {
           if (event.mouseButton.button == sf::Mouse::Left) {
             if (event.mouseButton.x < 640) {
               pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-              if (touched.first != -1 && touched != f)
+              if (touched.first != -1 && touched != f) {
                 makeMove(board, moves, captured, touched,
                          f, player, checkmate, castled);
+
+                // evaluation
+                pair<short, short> matEval = evaluate(board);
+                eval = matEval.first - matEval.second;
+                string evalString = "";
+                if (eval > 0) {
+                  evalString.append(1, '+');
+                  evalString.append(to_string(eval));
+                } else if (eval < 0) {
+                  evalString.append(1, '-');
+                  evalString.append(to_string(eval));
+                } else {
+                  evalString = "+/-";
+                }
+                if (checkmate.first != -1) evalString = "#";
+                evalText.setString(evalString);
+              }
             }
           }
         }
@@ -253,6 +251,7 @@ int main() {
     window.clear(sf::Color(100, 100, 100));
 
     // draw display
+    // timer
     string timer = "";
     if (player) {
       window.draw(wActive);
@@ -265,6 +264,8 @@ int main() {
     }
     window.draw(wTimer);
     window.draw(bTimer);
+    window.draw(eb);
+    window.draw(evalText);
 
     // draw board
     window.draw(bs);

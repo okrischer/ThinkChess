@@ -44,7 +44,7 @@ string convertFromBoard(bool cap, Piece* from, pair<int, int> to) {
 }
 
 // set valid moves for display
-void setValidMoves(vector<vector<Piece*>>& bd,
+void setValidMoves(const vector<vector<Piece*>>& bd,
                    vector<vector<short>>& vm,
                    Piece* pc)
 {
@@ -61,7 +61,7 @@ void setValidMoves(vector<vector<Piece*>>& bd,
 }
 
 // test for check
-bool check(vector<vector<Piece*>>& bd, bool white) {
+bool check(const vector<vector<Piece*>>& bd, bool white) {
   Piece* king = nullptr;
   bool check = false;
   for (int row = 0; row < 8; row++) {
@@ -457,7 +457,7 @@ bool resolveCheck(vector<vector<Piece*>>& bd, bool player) {
 }
 
 // print board for debug
-void printBoard(vector<vector<Piece*>>& bd) {
+void printBoard(const vector<vector<Piece*>>& bd) {
   cout << "\n";
   for (int row = 0; row < 8; row++) {
     string rank = "";
@@ -474,7 +474,7 @@ void printBoard(vector<vector<Piece*>>& bd) {
 }
 
 // get opponents king coordinates
-pair<int, int> getKing(vector<vector<Piece*>>& bd, bool white) {
+pair<int, int> getKing(const vector<vector<Piece*>>& bd, bool white) {
   Piece* king = nullptr;
   pair<int, int> coord;
   for (int row = 0; row < 8; row++) {

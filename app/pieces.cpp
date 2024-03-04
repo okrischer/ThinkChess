@@ -1,19 +1,20 @@
 #include "pieces.hpp"
 #include <vector>
+
 using namespace std;
 
-bool King::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+bool King::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = abs(r-row) <= 1 && abs(c-col) <= 1;
   return valid;
 }
 
-bool Knight::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+bool Knight::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = (abs(r-row) == 1 && abs(c-col) == 2) ||
                (abs(r-row) == 2 && abs(c-col) == 1);
   return valid;
 }
 
-bool Rook::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+bool Rook::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = r == row || c == col;
   if (r == row && abs(c-col) > 1) { // same row
     if (c < col) { // left
@@ -44,7 +45,7 @@ bool Rook::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
   return valid;
 }
 
-bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+bool Bishop::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = r-c == row-col || r+c == row+col;
   if (r-c == row-col) { // same major diagonal
     if (r < row) { // upper
@@ -91,7 +92,7 @@ bool Bishop::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
   return valid;
 }
 
-bool Queen::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+bool Queen::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   auto rook = new Rook(white, row, col);
   auto bishop = new Bishop(white, row, col);
   bool valid = rook->isValid(bd, r, c) || bishop->isValid(bd, r, c);
@@ -100,7 +101,7 @@ bool Queen::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
   return valid;
 }
 
-bool Pawn::isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) {
+bool Pawn::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = false;
   if (white) {
     if (r == row-1 && c == col) { // move

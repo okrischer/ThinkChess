@@ -1,17 +1,19 @@
 #pragma once
 #include <vector>
 
+using namespace std;
+
 // public interface for pieces
 class Piece {
 public:
   virtual ~Piece() {}
   virtual char getType() = 0;
-  virtual char getValue() = 0;
+  virtual short getValue() = 0;
   virtual bool isWhite() = 0;
   virtual int getRow() = 0;
   virtual int getCol() = 0;
   virtual void makeMove(int r, int c) = 0;
-  virtual bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) = 0;
+  virtual bool isValid(const vector<vector<Piece*>>& bd, int r, int c) = 0;
 };
 
 
@@ -22,12 +24,12 @@ public:
     type{'K'}, white{w}, value{0}, row{r}, col{c} {}
 
   char getType() override { return type; }
-  char getValue() override { return value; }
+  short getValue() override { return value; }
   bool isWhite() override { return white; }
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(const vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -42,15 +44,15 @@ class Queen : public Piece {
 public:
   ~Queen() {}
   Queen(bool w, int r, int c) :
-    type{'Q'}, white{w}, value{8}, row{r}, col{c} {}
+    type{'Q'}, white{w}, value{9}, row{r}, col{c} {}
 
   char getType() override { return type; }
-  char getValue() override { return value; }
+  short getValue() override { return value; }
   bool isWhite() override { return white; }
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(const vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -65,15 +67,15 @@ class Rook : public Piece {
 public:
   ~Rook() {}
   Rook(bool w, int r, int c) :
-    type{'R'}, white{w}, value{4}, row{r}, col{c} {}
+    type{'R'}, white{w}, value{5}, row{r}, col{c} {}
 
   char getType() override { return type; }
-  char getValue() override { return value; }
+  short getValue() override { return value; }
   bool isWhite() override { return white; }
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(const vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -91,12 +93,12 @@ public:
     type{'B'}, white{w}, value{3}, row{r}, col{c} {}
 
   char getType() override { return type; }
-  char getValue() override { return value; }
+  short getValue() override { return value; }
   bool isWhite() override { return white; }
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(const vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -114,12 +116,12 @@ public:
     type{'N'}, white{w}, value{3}, row{r}, col{c} {}
 
   char getType() override { return type; }
-  char getValue() override { return value; }
+  short getValue() override { return value; }
   bool isWhite() override { return white; }
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(const vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
@@ -137,12 +139,12 @@ public:
     type{'P'}, white{w}, value{1}, row{r}, col{c} {}
 
   char getType() override { return type; }
-  char getValue() override { return value; }
+  short getValue() override { return value; }
   bool isWhite() override { return white; }
   int getRow() override { return row; }
   int getCol() override { return col; }
   void makeMove(int r, int c) override { row = r; col = c; }
-  bool isValid(std::vector<std::vector<Piece*>>& bd, int r, int c) override;
+  bool isValid(const vector<vector<Piece*>>& bd, int r, int c) override;
 
 private:
   char type;
