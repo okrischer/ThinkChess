@@ -1,4 +1,6 @@
 #include <SFML/Graphics.hpp>
+#include "SFML/Graphics/Color.hpp"
+#include "SFML/Graphics/Sprite.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
 #include "list.hpp"
@@ -10,6 +12,37 @@
 
 using namespace std;
 
+string getTime(unsigned t) {
+  string result = "";
+  unsigned h = 0;
+  unsigned m = t / 60;
+  unsigned s = t % 60;
+  if (m >= 60) {
+    h = m / 60;
+    m = m % 60;
+  }
+  if (h < 10) {
+    result.append(1, '0');
+    result.append(to_string(h));
+  } else {
+    result.append(to_string(h));
+  }
+  result.append(1, ':');
+  if (m < 10) {
+    result.append(1, '0');
+    result.append(to_string(m));
+  } else {
+    result.append(to_string(m));
+  }
+  result.append(1, ':');
+  if (s < 10) {
+    result.append(1, '0');
+    result.append(to_string(s));
+  } else {
+    result.append(to_string(s));
+  }
+  return result;
+}
 
 int main() {
   sf::ContextSettings settings;
@@ -25,6 +58,8 @@ int main() {
   short state = 1;
 
   // start timer
+  unsigned wTime = 0;
+  unsigned bTime = 0;
   chrono::steady_clock::time_point last;
   last = chrono::steady_clock::now();
   chrono::steady_clock::time_point now;
@@ -53,8 +88,27 @@ int main() {
   // already castled, 0 = no, 1 = white, 2 = black, 3 = both
   short castled = 0;
 
-  // initialize board
+  // initialize board TODO: reset timers when starting a new game
   resetBoard(board, moves, captured);
+
+  // set font for text display
+  sf::Font noto;
+  if (!noto.loadFromFile("../img/NotoMono-Regular.ttf")) {
+    cout << "failed to load the font\n";
+    return 1;
+  }
+
+  // set timer
+  sf::Text wTimer;
+  wTimer.setFont(noto);
+  wTimer.setCharacterSize(24);
+  wTimer.setStyle(sf::Text::Bold);
+  wTimer.setFillColor(sf::Color::White);
+  wTimer.setPosition(690.f, 10.f);
+
+  sf::Text bTimer = wTimer;
+  bTimer.setFillColor(sf::Color::Black);
+  bTimer.setPosition(690.f, 40.f);
 
   // board sprite
   sf::Texture bi;
@@ -135,41 +189,14 @@ int main() {
   cm.setOutlineThickness(12.f);
   cm.setOutlineColor(sf::Color(200, 0, 0));
 
-  // digits for timer
-  sf::Texture d0; sf::Sprite s0;
-  sf::Texture d1; sf::Sprite s1;
-  sf::Texture d2; sf::Sprite s2;
-  sf::Texture d3; sf::Sprite s3;
-  sf::Texture d4; sf::Sprite s4;
-  sf::Texture d5; sf::Sprite s5;
-  sf::Texture d6; sf::Sprite s6;
-  sf::Texture d7; sf::Sprite s7;
-  sf::Texture d8; sf::Sprite s8;
-  sf::Texture d9; sf::Sprite s9;
-  sf::Texture dc; sf::Sprite sc;
-  d0.loadFromFile("../img/LED_digit_0.png");
-  s0.setTexture(d0);
-  s0.setPosition(650.f, 10.f);
-  d1.loadFromFile("../img/LED_digit_1.png");
-  s1.setTexture(d1);
-  d2.loadFromFile("../img/LED_digit_2.png");
-  s2.setTexture(d2);
-  d3.loadFromFile("../img/LED_digit_3.png");
-  s3.setTexture(d3);
-  d4.loadFromFile("../img/LED_digit_4.png");
-  s4.setTexture(d4);
-  d5.loadFromFile("../img/LED_digit_5.png");
-  s5.setTexture(d5);
-  d6.loadFromFile("../img/LED_digit_6.png");
-  s6.setTexture(d6);
-  d7.loadFromFile("../img/LED_digit_7.png");
-  s7.setTexture(d7);
-  d8.loadFromFile("../img/LED_digit_8.png");
-  s8.setTexture(d8);
-  d9.loadFromFile("../img/LED_digit_9.png");
-  s9.setTexture(d9);
-  dc.loadFromFile("../img/LED_colon.png");
-  sc.setTexture(dc);
+  // marker for aktive player
+  sf::CircleShape wActive(10.f);
+  wActive.setPosition(650.f, 15.f);
+  wActive.setFillColor(sf::Color::White);
+  sf::CircleShape bActive(10.f);
+  bActive.setPosition(650.f, 45.f);
+  bActive.setFillColor(sf::Color::Black);
+  
 
   // game loop
   while (window.isOpen()) {
@@ -214,15 +241,30 @@ int main() {
     } // end event loop
 
     // set timer
-    now = chrono::steady_clock::now();
-    if (now - last > 1s) {
-      last = chrono::steady_clock::now();
+    if (state == 1) {
+      now = chrono::steady_clock::now();
+      if (now - last > 1s) {
+        last = chrono::steady_clock::now();
+        if (player) wTime++;
+        else bTime++;
+      }
     }
 
     window.clear(sf::Color(100, 100, 100));
 
     // draw display
-    window.draw(s0);
+    string timer = "";
+    if (player) {
+      window.draw(wActive);
+      timer = getTime(wTime);
+      wTimer.setString(timer);
+    } else {
+      window.draw(bActive);
+      timer = getTime(bTime);
+      bTimer.setString(timer);
+    }
+    window.draw(wTimer);
+    window.draw(bTimer);
 
     // draw board
     window.draw(bs);
