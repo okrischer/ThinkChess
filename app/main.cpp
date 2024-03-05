@@ -1,7 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include "pieces.hpp"
 #include "moves.hpp"
-#include "list.hpp"
 #include "display.hpp"
 #include <iostream>
 #include <chrono>
@@ -35,11 +34,11 @@ int main() {
   // matrix of valid moves for display
   vector<vector<short>> validMoves(8, vector<short>(8, 0));
 
-  // list of moves, used as a stack
-  auto* moves = new list::List<string>;
+  // vector of moves, used as a stack
+  vector<string> moves;
 
   // list of captured pieces, used as a stack
-  auto* captured = new list::List<Piece*>;
+  vector<Piece*> captured;
 
   // player to turn, starting with white
   bool player = true;
@@ -72,6 +71,7 @@ int main() {
   wTimer.setCharacterSize(24);
   wTimer.setStyle(sf::Text::Bold);
   wTimer.setFillColor(sf::Color::White);
+  wTimer.setString("00:00:00");
   wTimer.setPosition(690.f, 10.f);
 
   sf::Text bTimer = wTimer;
@@ -220,15 +220,9 @@ int main() {
                 pair<short, short> matEval = evaluate(board);
                 eval = matEval.first - matEval.second;
                 string evalString = "";
-                if (eval > 0) {
-                  evalString.append(1, '+');
-                  evalString.append(to_string(eval));
-                } else if (eval < 0) {
-                  evalString.append(1, '-');
-                  evalString.append(to_string(eval));
-                } else {
-                  evalString = "+/-";
-                }
+                if (eval > 0) evalString.append(1, '+');
+                evalString.append(to_string(eval));
+                if (eval == 0) evalString = "+/-";
                 if (checkmate.first != -1) evalString = "#";
                 evalText.setString(evalString);
               }

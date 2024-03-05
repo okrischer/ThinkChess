@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pieces.hpp"
-#include "list.hpp"
 #include <utility>
 #include <vector>
 #include <string>
@@ -28,8 +27,8 @@ void setValidMoves(const vector<vector<Piece*>>& bd,
 
 // make a move
 void makeMove(vector<vector<Piece*>>& bd,
-              list::List<string>* mv,
-              list::List<Piece*>* cp,
+              vector<string>& mv,
+              vector<Piece*>& cp,
               pair<int, int>& td,
               pair<int, int> to,
               bool& player,
@@ -51,8 +50,8 @@ char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to);
 
 // reset board for new game
 void resetBoard(vector<vector<Piece*>>& bd,
-                 list::List<string>* mv,
-                 list::List<Piece*>* cp);
+                vector<string>& mv,
+                vector<Piece*>& cp);
 
 
 // print board for debug

@@ -258,8 +258,8 @@ char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to) {
 
 // make a move
 void makeMove(vector<vector<Piece*>>& bd,
-              list::List<string>* mv,
-              list::List<Piece*>* cp,
+              vector<string>& mv,
+              vector<Piece*>& cp,
               pair<int, int>& td,
               pair<int, int> to,
               bool& player,
@@ -304,15 +304,15 @@ void makeMove(vector<vector<Piece*>>& bd,
           move.append(1, '+');
         } else { // cannot get out of check
           move.append(1, '#');
-          mv->push_front(move);
-          cout << mv->peek(1) << "\n";
+          mv.push_back(move);
+          cout << mv.back() << "\n";
           checkmate = getKing(bd, !player);
           return;
         }
       }
       // complete move
-      mv->push_front(move);
-      cout << mv->peek(1) << "\n";
+      mv.push_back(move);
+      cout << mv.back() << "\n";
       td = {-1, -1};
       player = !player;
       return;
@@ -333,15 +333,15 @@ void makeMove(vector<vector<Piece*>>& bd,
           move.append(1, '+');
         } else { // cannot get out of check
           move.append(1, '#');
-          mv->push_front(move);
-          cout << mv->peek(1) << "\n";
+          mv.push_back(move);
+          cout << mv.back() << "\n";
           checkmate = getKing(bd, !player);
           return;
         }
       }
       // complete move
-      mv->push_front(move);
-      cout << mv->peek(1) << "\n";
+      mv.push_back(move);
+      cout << mv.back() << "\n";
       td = {-1, -1};
       player = !player;
       return;
@@ -353,8 +353,8 @@ void makeMove(vector<vector<Piece*>>& bd,
     // can capture?
     if (pct && pct->isWhite() != pcf->isWhite()) {
       cap = true;
-      cp->push_front(pct);
-      cout << "captured: " << cp->size() << "\n";
+      cp.push_back(pct);
+      cout << "captured: " << cp.size() << "\n";
     } else if (pct) { // same color
       cout << "cannot capture own piece!\n";
       td = {-1, -1};
@@ -398,14 +398,14 @@ void makeMove(vector<vector<Piece*>>& bd,
         move.append(1, '+');
       } else { // cannot get out of check
         move.append(1, '#');
-        mv->push_front(move);
-        cout << mv->peek(1) << "\n";
+        mv.push_back(move);
+        cout << mv.back() << "\n";
         checkmate = getKing(bd, !player);
         return;
       }
     }
-    mv->push_front(move);
-    cout << mv->peek(1) << "\n";
+    mv.push_back(move);
+    cout << mv.back() << "\n";
     td = {-1, -1};
     player = !player;
     return;
@@ -496,18 +496,16 @@ pair<int, int> getKing(const vector<vector<Piece*>>& bd, bool white) {
 
 // reset board for new game
 void resetBoard(vector<vector<Piece*>>& bd,
-                 list::List<string>* mv,
-                 list::List<Piece*>* cp)
+                vector<string>& mv,
+                vector<Piece*>& cp)
 {
   // reset moves and captured pieces
-  delete mv;
-  mv = new list::List<string>;
-  delete cp;
-  cp = new list::List<Piece*>;
+  mv.clear();
+  cp.clear();
   // reset board
-  for (auto rank : bd) {
-    for (auto piece : rank) {
-      delete piece;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      bd[row][col] = nullptr;
     }
   }
   // set board to initial position
