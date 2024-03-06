@@ -11,4 +11,4 @@ using namespace std;
 string getTime(unsigned t);
 
 // returns a material evaluation for both players
-pair<short, short> evaluate(const vector<vector<Piece*>>& bd);
+pair<float, float> evaluate(const vector<vector<Piece*>>& bd);

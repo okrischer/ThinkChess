@@ -26,7 +26,7 @@ void setValidMoves(const vector<vector<Piece*>>& bd,
 
 
 // make a move
-void makeMove(vector<vector<Piece*>>& bd,
+bool makeMove(vector<vector<Piece*>>& bd,
               vector<string>& mv,
               vector<Piece*>& cp,
               pair<int, int>& td,
@@ -41,9 +41,6 @@ bool check(const vector<vector<Piece*>>& bd, Piece* pc);
 
 // check wether a given check can be resolved
 bool resolveCheck(vector<vector<Piece*>>& bd, bool player);
-
-// get opponents king coordinates
-pair<int, int> getKing(const vector<vector<Piece*>>& bd, bool white);
 
 // test wether castling is possible
 char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to);

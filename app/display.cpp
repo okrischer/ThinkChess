@@ -37,9 +37,9 @@ string getTime(unsigned t) {
 }
 
 // returns a material evaluation for both players
-pair<short, short> evaluate(const vector<vector<Piece*>>& bd) {
-  short white = 0;
-  short black = 0;
+pair<float, float> evaluate(const vector<vector<Piece*>>& bd) {
+  float white = 0.f;
+  float black = 0.f;
   
   for (int row = 0; row < 8; row++) {
     for (int col = 0; col < 8; col++) {
@@ -50,6 +50,6 @@ pair<short, short> evaluate(const vector<vector<Piece*>>& bd) {
     }
   }
 
-  pair<short, short> eval = make_pair(white, black);
+  pair<float, float> eval = make_pair(white, black);
   return eval;
 }

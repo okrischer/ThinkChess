@@ -257,7 +257,7 @@ char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to) {
 }
 
 // make a move
-void makeMove(vector<vector<Piece*>>& bd,
+bool makeMove(vector<vector<Piece*>>& bd,
               vector<string>& mv,
               vector<Piece*>& cp,
               pair<int, int>& td,
@@ -274,12 +274,12 @@ void makeMove(vector<vector<Piece*>>& bd,
   if (!pcf) {
     cout << "no piece under cursor\n";
     td = {-1, -1};
-    return;
+    return false;
   }
   if (pcf->isWhite() != player) {
     cout << "it's not your turn\n";
     td = {-1, -1};
-    return;
+    return false;
   }
 
   // castling
@@ -306,8 +306,8 @@ void makeMove(vector<vector<Piece*>>& bd,
           move.append(1, '#');
           mv.push_back(move);
           cout << mv.back() << "\n";
-          checkmate = getKing(bd, !player);
-          return;
+          checkmate = to;
+          return true;
         }
       }
       // complete move
@@ -315,7 +315,7 @@ void makeMove(vector<vector<Piece*>>& bd,
       cout << mv.back() << "\n";
       td = {-1, -1};
       player = !player;
-      return;
+      return true;
     } else if (form == 'Q') {
       castled = castled > 0 ? 3 : cast;
       move = "0-0-0";
@@ -335,8 +335,8 @@ void makeMove(vector<vector<Piece*>>& bd,
           move.append(1, '#');
           mv.push_back(move);
           cout << mv.back() << "\n";
-          checkmate = getKing(bd, !player);
-          return;
+          checkmate = to;
+          return true;
         }
       }
       // complete move
@@ -344,7 +344,7 @@ void makeMove(vector<vector<Piece*>>& bd,
       cout << mv.back() << "\n";
       td = {-1, -1};
       player = !player;
-      return;
+      return true;
     }
   } // end castling
 
@@ -354,11 +354,10 @@ void makeMove(vector<vector<Piece*>>& bd,
     if (pct && pct->isWhite() != pcf->isWhite()) {
       cap = true;
       cp.push_back(pct);
-      cout << "captured: " << cp.size() << "\n";
     } else if (pct) { // same color
       cout << "cannot capture own piece!\n";
       td = {-1, -1};
-      return;
+      return false;
     }
 
     string move = convertFromBoard(cap, pcf, to);
@@ -391,8 +390,9 @@ void makeMove(vector<vector<Piece*>>& bd,
       }
       bd[td.first][td.second] = pcf;
       pcf->makeMove(td.first, td.second);
+      if (cap) cp.pop_back();
       td = {-1, -1};
-      return;
+      return false;
     } else if (check(bd, !player)) { // gives opponent check
       if (resolveCheck(bd, !player)) {
         move.append(1, '+');
@@ -400,20 +400,21 @@ void makeMove(vector<vector<Piece*>>& bd,
         move.append(1, '#');
         mv.push_back(move);
         cout << mv.back() << "\n";
-        checkmate = getKing(bd, !player);
-        return;
+        checkmate = to;
+        return true;
       }
     }
     mv.push_back(move);
     cout << mv.back() << "\n";
     td = {-1, -1};
     player = !player;
-    return;
+    return true;
 
   // illegal move
   } else {
     cout << "illegal move!\n";
     td = {-1, -1};
+    return false;
   }
 }
 
@@ -471,27 +472,6 @@ void printBoard(const vector<vector<Piece*>>& bd) {
     cout << rank << "\n";
   }
   cout << "\n";
-}
-
-// get opponents king coordinates
-pair<int, int> getKing(const vector<vector<Piece*>>& bd, bool white) {
-  Piece* king = nullptr;
-  pair<int, int> coord;
-  for (int row = 0; row < 8; row++) {
-    for (int col = 0; col < 8; col++) {
-      auto current = bd[row][col];
-      if (current && current->getType() == 'K' &&
-          current->isWhite() == white) {
-        king = current;
-      }
-    }
-  }
-  if (!king) {
-    throw domain_error{"found no king in getKing()"};
-  } else {
-    coord = make_pair(king->getRow(), king->getCol());
-  }
-  return coord;
 }
 
 // reset board for new game

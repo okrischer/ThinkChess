@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include "SFML/Graphics/VertexArray.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
 #include "display.hpp"
@@ -13,7 +14,7 @@ int main() {
   settings.antialiasingLevel = 8;
   auto window = sf::RenderWindow{ {860, 640u},
                                   "ThinkChess++",
-                                  sf::Style::Default,
+                                  sf::Style::Close,
                                   settings };
 
   window.setFramerateLimit(10);
@@ -42,9 +43,12 @@ int main() {
 
   // player to turn, starting with white
   bool player = true;
+  
+  // indicates whether a move was successful
+  bool moved = false;
 
   // basic evaluation
-  short eval = 0;
+  float eval = 0;
 
   // touched field for making moves
   pair<int, int> touched{-1, -1};
@@ -77,14 +81,6 @@ int main() {
   sf::Text bTimer = wTimer;
   bTimer.setFillColor(sf::Color::Black);
   bTimer.setPosition(690.f, 40.f);
-
-  // set evaluation
-  sf::Text evalText;
-  evalText.setFont(noto);
-  evalText.setCharacterSize(20);
-  evalText.setFillColor(sf::Color::White);
-  evalText.setString("+/-");
-  evalText.setPosition(740.f, 70.f);
 
   // board sprite
   sf::Texture bi;
@@ -165,10 +161,37 @@ int main() {
   cm.setOutlineThickness(12.f);
   cm.setOutlineColor(sf::Color(200, 0, 0));
 
-  // background for evaluation
-  sf::RectangleShape eb(sf::Vector2f(115.f, 25.f));
-  eb.setFillColor(sf::Color::Black);
-  eb.setPosition(695.f, 70.f);
+  // evaluation meter
+  sf::VertexArray mb(sf::Triangles, 6);
+  mb[0].position = sf::Vector2f(690.f, 80.f);
+  mb[1].position = sf::Vector2f(690.f, 100.f);
+  mb[2].position = sf::Vector2f(810.f, 100.f);
+  mb[3].position = sf::Vector2f(690.f, 80.f);
+  mb[4].position = sf::Vector2f(810.f, 80.f);
+  mb[5].position = sf::Vector2f(810.f, 100.f);
+  mb[0].color = sf::Color::White;
+  mb[1].color = sf::Color::White;
+  mb[2].color = sf::Color::Black;
+  mb[3].color = sf::Color::White;
+  mb[4].color = sf::Color::Black;
+  mb[5].color = sf::Color::Black;
+  sf::VertexArray mi(sf::Lines, 4);
+  mi[0].position = sf::Vector2f(750.f, 80.f);
+  mi[1].position = sf::Vector2f(750.f, 100.f);
+  mi[2].position = sf::Vector2f(750.f, 80.f);
+  mi[3].position = sf::Vector2f(750.f, 100.f);
+  mi[0].color = sf::Color::Green;
+  mi[1].color = sf::Color::Green;
+  mi[2].color = sf::Color::Red;
+  mi[3].color = sf::Color::Red;
+
+  // background for captured pieces
+  sf::RectangleShape bcw(sf::Vector2f(200.f, 20.f));
+  bcw.setFillColor(sf::Color(30, 30, 30, 200));
+  bcw.setPosition(650.f, 115.f);
+  sf::RectangleShape bcb = bcw;
+  bcb.setFillColor(sf::Color(220, 220, 220));
+  bcb.move(0.f, 30.f);
 
   // marker for aktive player
   sf::CircleShape wActive(10.f);
@@ -213,18 +236,8 @@ int main() {
             if (event.mouseButton.x < 640) {
               pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
               if (touched.first != -1 && touched != f) {
-                makeMove(board, moves, captured, touched,
+                moved = makeMove(board, moves, captured, touched,
                          f, player, checkmate, castled);
-
-                // evaluation
-                pair<short, short> matEval = evaluate(board);
-                eval = matEval.first - matEval.second;
-                string evalString = "";
-                if (eval > 0) evalString.append(1, '+');
-                evalString.append(to_string(eval));
-                if (eval == 0) evalString = "+/-";
-                if (checkmate.first != -1) evalString = "#";
-                evalText.setString(evalString);
               }
             }
           }
@@ -256,10 +269,66 @@ int main() {
       timer = getTime(bTime);
       bTimer.setString(timer);
     }
+    if (checkmate.first != -1) {
+      if (player) {
+        bActive.setFillColor(sf::Color(200, 0, 0));
+        window.draw(bActive);
+      } else {
+        wActive.setFillColor(sf::Color(200, 0, 0));
+        window.draw(wActive);
+      }
+    }
     window.draw(wTimer);
     window.draw(bTimer);
-    window.draw(eb);
-    window.draw(evalText);
+    // evaluation
+    if (moved) {
+      pair<float, float> matEval = evaluate(board);
+      eval = matEval.first - matEval.second;
+      if (eval > 20.0) eval = 20.f;
+      if (eval < -20.0) eval = -20.f;
+      mi[2].position = sf::Vector2f(750.f - eval*3.f, 80.f);
+      mi[3].position = sf::Vector2f(750.f - eval*3.f, 100.f);
+      moved = false;
+    }
+    window.draw(mb);
+    window.draw(mi);
+    // captured pieces
+    window.draw(bcw);
+    window.draw(bcb);
+    int wc = -1;
+    int bc = -1;
+    for (auto piece : captured) {
+      sf::Sprite cp;
+      switch (piece->getType()) {
+      case 'K':
+        piece->isWhite() ? cp = wk : cp = bk;
+        break;
+      case 'Q':
+        piece->isWhite() ? cp = wq : cp = bq;
+        break;
+      case 'R':
+        piece->isWhite() ? cp = wr : cp = br;
+        break;
+      case 'B':
+        piece->isWhite() ? cp = wb : cp = bb;
+        break;
+      case 'N':
+        piece->isWhite() ? cp = wn : cp = bn;
+        break;
+      case 'P':
+        piece->isWhite() ? cp = wp : cp = bp;
+        break;
+      }
+      cp.scale(0.3f, 0.3f);
+      if (piece->isWhite()) {
+        wc++;
+        cp.setPosition(650.f + wc*15.f, 115.f);
+      } else {
+        bc++;
+        cp.setPosition(650.f + bc*15.f, 145.f);
+      }
+      window.draw(cp);
+    }
 
     // draw board
     window.draw(bs);
