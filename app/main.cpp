@@ -1,8 +1,7 @@
 #include <SFML/Graphics.hpp>
-#include "SFML/Graphics/VertexArray.hpp"
 #include "pieces.hpp"
-#include "moves.hpp"
 #include "display.hpp"
+#include "position.hpp"
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -19,8 +18,11 @@ int main() {
 
   window.setFramerateLimit(10);
 
-  // gamestate, set to play
-  short state = 1;
+  // main state object
+  Position position = Position(); 
+
+  // indicates whether a move was successful
+  bool moved = false;
 
   // start timer
   unsigned wTime = 0;
@@ -29,38 +31,14 @@ int main() {
   last = chrono::steady_clock::now();
   chrono::steady_clock::time_point now;
 
-  // matrix of pieces representing the board
-  vector<vector<Piece*>> board(8, vector<Piece*>(8));
-
   // matrix of valid moves for display
   vector<vector<short>> validMoves(8, vector<short>(8, 0));
-
-  // vector of moves, used as a stack
-  vector<string> moves;
-
-  // list of captured pieces, used as a stack
-  vector<Piece*> captured;
-
-  // player to turn, starting with white
-  bool player = true;
-  
-  // indicates whether a move was successful
-  bool moved = false;
-
-  // basic evaluation
-  float eval = 0;
 
   // touched field for making moves
   pair<int, int> touched{-1, -1};
 
-  // checkmate
-  pair<int, int> checkmate{-1, -1};
-
-  // already castled, 0 = no, 1 = white, 2 = black, 3 = both
-  short castled = 0;
-
-  // initialize board TODO: reset timers and eval when starting a new game
-  resetBoard(board, moves, captured);
+  // initialize board TODO: reset timers when starting a new game
+  resetBoard(position);
 
   // set font for text display
   sf::Font noto;
@@ -210,20 +188,20 @@ int main() {
         window.close();
       }
       // game is running in play mode
-      if (state == 1) {
+      if (position.gamestate == 1) {
         // mouse button pressed
         if (event.type == sf::Event::MouseButtonPressed) {
           if (event.mouseButton.button == sf::Mouse::Right) {
             if (event.mouseButton.x < 640) {
               pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-              setValidMoves(board, validMoves, board[f.first][f.second]);
+              setValidMoves(position, validMoves, f);
             }
           }
           if (event.mouseButton.button == sf::Mouse::Left) {
             if (event.mouseButton.x < 640) {
-              pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-              if (touched.first == -1) touched = f;
-              else if (f == touched) touched = {-1, -1};
+              pair<int, int> from = getField(event.mouseButton.x, event.mouseButton.y);
+              if (touched.first == -1) touched = from;
+              else if (from == touched) touched = {-1, -1};
             }
           }
         }
@@ -234,10 +212,9 @@ int main() {
           }
           if (event.mouseButton.button == sf::Mouse::Left) {
             if (event.mouseButton.x < 640) {
-              pair<int, int> f = getField(event.mouseButton.x, event.mouseButton.y);
-              if (touched.first != -1 && touched != f) {
-                moved = makeMove(board, moves, captured, touched,
-                         f, player, checkmate, castled);
+              pair<int, int> to = getField(event.mouseButton.x, event.mouseButton.y);
+              if (touched.first != -1 && touched != to) {
+                moved = position.makeMove(touched, to);
               }
             }
           }
@@ -246,11 +223,11 @@ int main() {
     } // end event loop
 
     // set timer
-    if (state == 1) {
+    if (position.gamestate == 1) {
       now = chrono::steady_clock::now();
       if (now - last > 1s) {
         last = chrono::steady_clock::now();
-        if (player) wTime++;
+        if (position.player) wTime++;
         else bTime++;
       }
     }
@@ -260,7 +237,7 @@ int main() {
     // draw display
     // timer
     string timer = "";
-    if (player) {
+    if (position.player) {
       window.draw(wActive);
       timer = getTime(wTime);
       wTimer.setString(timer);
@@ -269,8 +246,8 @@ int main() {
       timer = getTime(bTime);
       bTimer.setString(timer);
     }
-    if (checkmate.first != -1) {
-      if (player) {
+    if (position.checkmate.first != -1) {
+      if (position.player) {
         bActive.setFillColor(sf::Color(200, 0, 0));
         window.draw(bActive);
       } else {
@@ -282,12 +259,12 @@ int main() {
     window.draw(bTimer);
     // evaluation
     if (moved) {
-      pair<float, float> matEval = evaluate(board);
-      eval = matEval.first - matEval.second;
-      if (eval > 20.0) eval = 20.f;
-      if (eval < -20.0) eval = -20.f;
-      mi[2].position = sf::Vector2f(750.f - eval*3.f, 80.f);
-      mi[3].position = sf::Vector2f(750.f - eval*3.f, 100.f);
+      pair<int, int> matEval = position.evaluate();
+      position.eval = float(matEval.first) / 100 - float(matEval.second) / 100;
+      if (position.eval > 20.0) position.eval = 20.f;
+      if (position.eval < -20.0) position.eval = -20.f;
+      mi[2].position = sf::Vector2f(750.f - position.eval*3.f, 80.f);
+      mi[3].position = sf::Vector2f(750.f - position.eval*3.f, 100.f);
       moved = false;
     }
     window.draw(mb);
@@ -297,7 +274,7 @@ int main() {
     window.draw(bcb);
     int wc = -1;
     int bc = -1;
-    for (auto piece : captured) {
+    for (auto piece : position.captured) {
       sf::Sprite cp;
       switch (piece->getType()) {
       case 'K':
@@ -336,8 +313,8 @@ int main() {
     // draw pieces
     for (int row = 0; row < 8; row++) {
       for (int col = 0; col < 8; col++) {
-        if (board[row][col]) {
-          auto piece = board[row][col];
+        if (position.board[row][col]) {
+          auto piece = position.board[row][col];
           sf::Sprite pc;
           switch (piece->getType()) {
           case 'K':
@@ -363,7 +340,7 @@ int main() {
             frame.setPosition(col*80.f + 10.f, row*80.f + 10.f);
             window.draw(frame);
           }
-          if (row == checkmate.first && col == checkmate.second) {
+          if (row == position.checkmate.first && col == position.checkmate.second) {
             cm.setPosition(col*80.f + 10.f, row*80.f + 10.f);
             window.draw(cm);
           }
@@ -387,7 +364,7 @@ int main() {
     window.display();
 
     // stop game when checkmate
-    if (checkmate.first != -1) state = 0;
+    if (position.checkmate.first != -1) position.gamestate = 0;
 
   } // end game loop
 } // end main

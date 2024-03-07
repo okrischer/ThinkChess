@@ -1,8 +1,7 @@
-#include "moves.hpp"
-#include "pieces.hpp"
-#include <iostream>
+#include "position.hpp"
 #include <stdexcept>
 #include <utility>
+
 
 // convert columns to files
 char colToFile(int col) {
@@ -41,54 +40,6 @@ string convertFromBoard(bool cap, Piece* from, pair<int, int> to) {
   move.append(1, colToFile(to.second));
   move.append(1, rowToRank(to.first));
   return move;
-}
-
-// set valid moves for display
-void setValidMoves(const vector<vector<Piece*>>& bd,
-                   vector<vector<short>>& vm,
-                   Piece* pc)
-{
-  if (!pc) return;
-  for (int row = 0; row < 8; row++) {
-    for (int col = 0; col < 8; col++) {
-      if (pc->isValid(bd, row, col)) {
-        auto current = bd[row][col];
-        if (!current) vm[row][col] = 1;
-        else if (pc->isWhite() != current->isWhite()) vm[row][col] = 2;
-      }
-    }
-  }
-}
-
-// test for check
-bool check(const vector<vector<Piece*>>& bd, bool white) {
-  Piece* king = nullptr;
-  bool check = false;
-  for (int row = 0; row < 8; row++) {
-    for (int col = 0; col < 8; col++) {
-      auto current = bd[row][col];
-      if (current && current->getType() == 'K' &&
-          current->isWhite() == white)
-      {
-        king = current;
-      }
-    }
-  }
-  if (!king) {
-    throw domain_error{"found no king in check()"};
-  } else {
-    for (int row = 0; row < 8; row++) {
-      for (int col = 0; col < 8; col++) {
-        auto current = bd[row][col];
-        if (current && current->isWhite() != white) {
-          if (current->isValid(bd, king->getRow(), king->getCol())) {
-            check = true;
-          }
-        }
-      }
-    }
-  }
-  return check;
 }
 
 // test wether castling is possible
@@ -256,166 +207,35 @@ char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to) {
   return 'N';
 }
 
-// make a move
-bool makeMove(vector<vector<Piece*>>& bd,
-              vector<string>& mv,
-              vector<Piece*>& cp,
-              pair<int, int>& td,
-              pair<int, int> to,
-              bool& player,
-              pair<int, int>& checkmate,
-              short& castled)
-{
-  auto pcf = bd[td.first][td.second];
-  auto pct = bd[to.first][to.second];
-  bool cap = false;
-  bool prom = false;
-
-  if (!pcf) {
-    cout << "no piece under cursor\n";
-    td = {-1, -1};
-    return false;
+// test for check
+bool check(const vector<vector<Piece*>>& bd, bool white) {
+  Piece* king = nullptr;
+  bool check = false;
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      auto current = bd[row][col];
+      if (current && current->getType() == 'K' &&
+          current->isWhite() == white)
+      {
+        king = current;
+      }
+    }
   }
-  if (pcf->isWhite() != player) {
-    cout << "it's not your turn\n";
-    td = {-1, -1};
-    return false;
-  }
-
-  // castling
-  short cast = player ? 1 : 2;
-  if (castled < 3 && castled != cast && pcf->getType() == 'K' && !pct) {
-    string move = "";
-    char form = castling(bd, pcf, to);
-    if (form == 'K') {
-      castled = castled > 0 ? 3 : cast;
-      move = "0-0";
-      // make king move
-      bd[td.first][td.second+2] = pcf;
-      pcf->makeMove(td.first, td.second+2);
-      bd[td.first][td.second] = nullptr;
-      // make rook move
-      auto rook = bd[td.first][7];
-      bd[td.first][td.second+1] = rook;
-      rook->makeMove(td.first, td.second+1);
-      bd[td.first][7] = nullptr;
-      if (check(bd, !player)) { // gives opponent check
-        if (resolveCheck(bd, !player)) {
-          move.append(1, '+');
-        } else { // cannot get out of check
-          move.append(1, '#');
-          mv.push_back(move);
-          cout << mv.back() << "\n";
-          checkmate = to;
-          return true;
-        }
-      }
-      // complete move
-      mv.push_back(move);
-      cout << mv.back() << "\n";
-      td = {-1, -1};
-      player = !player;
-      return true;
-    } else if (form == 'Q') {
-      castled = castled > 0 ? 3 : cast;
-      move = "0-0-0";
-      // make king move
-      bd[td.first][td.second-2] = pcf;
-      pcf->makeMove(td.first, td.second-2);
-      bd[td.first][td.second] = nullptr;
-      // make rook move
-      auto rook = bd[td.first][0];
-      bd[td.first][td.second-1] = rook;
-      rook->makeMove(td.first, td.second-1);
-      bd[td.first][0] = nullptr;
-      if (check(bd, !player)) { // gives opponent check
-        if (resolveCheck(bd, !player)) {
-          move.append(1, '+');
-        } else { // cannot get out of check
-          move.append(1, '#');
-          mv.push_back(move);
-          cout << mv.back() << "\n";
-          checkmate = to;
-          return true;
-        }
-      }
-      // complete move
-      mv.push_back(move);
-      cout << mv.back() << "\n";
-      td = {-1, -1};
-      player = !player;
-      return true;
-    }
-  } // end castling
-
-  // valid move?
-  if (pcf->isValid(bd, to.first, to.second)) {
-    // can capture?
-    if (pct && pct->isWhite() != pcf->isWhite()) {
-      cap = true;
-      cp.push_back(pct);
-    } else if (pct) { // same color
-      cout << "cannot capture own piece!\n";
-      td = {-1, -1};
-      return false;
-    }
-
-    string move = convertFromBoard(cap, pcf, to);
-
-    // promotion
-    if (pcf && pcf->getType() == 'P') {
-      if (pcf->isWhite() && pcf->getRow() == 1) { // white
-        pcf = new Queen(1, pcf->getRow(), pcf->getCol());
-        move.append("=Q");
-        prom = true;
-      } else if (!pcf->isWhite() && pcf->getRow() == 6) { // black
-        pcf = new Queen(0, pcf->getRow(), pcf->getCol());
-        move.append("=Q");
-        prom = true;
-      }
-    } // end promotion
-
-    // TODO: en passant
-
-    // make move
-    bd[to.first][to.second] = pcf;
-    pcf->makeMove(to.first, to.second);
-    bd[td.first][td.second] = nullptr;
-    if (check(bd, player)) { // gives itself check
-      cout << "observe check!\n";
-      // reset move
-      bd[to.first][to.second] = pct;
-      if (prom) { // promotion
-        pcf = new Pawn(pcf->isWhite(), pcf->getRow(), pcf->getCol());
-      }
-      bd[td.first][td.second] = pcf;
-      pcf->makeMove(td.first, td.second);
-      if (cap) cp.pop_back();
-      td = {-1, -1};
-      return false;
-    } else if (check(bd, !player)) { // gives opponent check
-      if (resolveCheck(bd, !player)) {
-        move.append(1, '+');
-      } else { // cannot get out of check
-        move.append(1, '#');
-        mv.push_back(move);
-        cout << mv.back() << "\n";
-        checkmate = to;
-        return true;
-      }
-    }
-    mv.push_back(move);
-    cout << mv.back() << "\n";
-    td = {-1, -1};
-    player = !player;
-    return true;
-
-  // illegal move
+  if (!king) {
+    throw domain_error{"found no king in check()"};
   } else {
-    cout << "illegal move!\n";
-    td = {-1, -1};
-    return false;
+    for (int row = 0; row < 8; row++) {
+      for (int col = 0; col < 8; col++) {
+        auto current = bd[row][col];
+        if (current && current->isWhite() != white) {
+          if (current->isValid(bd, king->getRow(), king->getCol())) {
+            check = true;
+          }
+        }
+      }
+    }
   }
+  return check;
 }
 
 // check wether a given check can be resolved
@@ -472,58 +292,5 @@ void printBoard(const vector<vector<Piece*>>& bd) {
     cout << rank << "\n";
   }
   cout << "\n";
-}
-
-// reset board for new game
-void resetBoard(vector<vector<Piece*>>& bd,
-                vector<string>& mv,
-                vector<Piece*>& cp)
-{
-  // reset moves and captured pieces
-  mv.clear();
-  cp.clear();
-  // reset board
-  for (int row = 0; row < 8; row++) {
-    for (int col = 0; col < 8; col++) {
-      bd[row][col] = nullptr;
-    }
-  }
-  // set board to initial position
-  // rank 8 (black)
-  bd[0][0] = new Rook(0,0,0);
-  bd[0][1] = new Knight(0,0,1);
-  bd[0][2] = new Bishop(0,0,2);
-  bd[0][3] = new Queen(0,0,3);
-  bd[0][4] = new King(0,0,4);
-  bd[0][5] = new Bishop(0,0,5);
-  bd[0][6] = new Knight(0,0,6);
-  bd[0][7] = new Rook(0,0,7);
-  // rank 7 (black)
-  bd[1][0] = new Pawn(0,1,0);
-  bd[1][1] = new Pawn(0,1,1);
-  bd[1][2] = new Pawn(0,1,2);
-  bd[1][3] = new Pawn(0,1,3);
-  bd[1][4] = new Pawn(0,1,4);
-  bd[1][5] = new Pawn(0,1,5);
-  bd[1][6] = new Pawn(0,1,6);
-  bd[1][7] = new Pawn(0,1,7);
-  // rank 2 (white)
-  bd[6][0] = new Pawn(1,6,0);
-  bd[6][1] = new Pawn(1,6,1);
-  bd[6][2] = new Pawn(1,6,2);
-  bd[6][3] = new Pawn(1,6,3);
-  bd[6][4] = new Pawn(1,6,4);
-  bd[6][5] = new Pawn(1,6,5);
-  bd[6][6] = new Pawn(1,6,6);
-  bd[6][7] = new Pawn(1,6,7);
-  // rank 1 (white)
-  bd[7][0] = new Rook(1,7,0);
-  bd[7][1] = new Knight(1,7,1);
-  bd[7][2] = new Bishop(1,7,2);
-  bd[7][3] = new Queen(1,7,3);
-  bd[7][4] = new King(1,7,4);
-  bd[7][5] = new Bishop(1,7,5);
-  bd[7][6] = new Knight(1,7,6);
-  bd[7][7] = new Rook(1,7,7);
 }
 

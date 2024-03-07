@@ -1,14 +1,16 @@
 #pragma once
 
-#include "pieces.hpp"
+#include "position.hpp"
 #include <string>
-#include <utility>
-#include <vector>
 
-using namespace std;
+
+// reset board for new game
+void resetBoard(Position& pos);
 
 // calculates and returns the timer string
-string getTime(unsigned t);
+std::string getTime(unsigned t);
 
-// returns a material evaluation for both players
-pair<float, float> evaluate(const vector<vector<Piece*>>& bd);
+// set valid moves for display
+void setValidMoves(const Position& pos,
+                   vector<vector<short>>& vm,
+                   pair<int, int> field);

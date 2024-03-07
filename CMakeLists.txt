@@ -21,6 +21,7 @@ FetchContent_Declare(SFML
   GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(ThinkChess app/main.cpp app/pieces.cpp app/moves.cpp app/display.cpp)
+add_executable(ThinkChess app/main.cpp app/pieces.cpp 
+              app/display.cpp app/position.cpp)
 target_link_libraries(ThinkChess PRIVATE sfml-graphics)
 target_include_directories(ThinkChess PUBLIC include)
