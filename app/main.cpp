@@ -179,6 +179,27 @@ int main() {
   bActive.setPosition(650.f, 45.f);
   bActive.setFillColor(sf::Color::Black);
   
+  // current move background
+  sf::RectangleShape mvb(sf::Vector2f(120.f, 20.f));
+  mvb.setFillColor(sf::Color::White);
+  mvb.setPosition(690.f, 190.f);
+
+  // current move indicator
+  sf::Text mvi;
+  mvi.setFont(noto);
+  mvi.setCharacterSize(16);
+  mvi.setFillColor(sf::Color::Black);
+  mvi.setPosition(720.f, 190.f);
+
+  // move bottons
+  sf::VertexArray mbt(sf::Triangles, 6);
+  mbt[0].position = sf::Vector2f(740.f, 220.f);
+  mbt[1].position = sf::Vector2f(720.f, 230.f);
+  mbt[2].position = sf::Vector2f(740.f, 240.f);
+  mbt[3].position = sf::Vector2f(760.f, 220.f);
+  mbt[4].position = sf::Vector2f(780.f, 230.f);
+  mbt[5].position = sf::Vector2f(760.f, 240.f);
+
 
   // game loop
   while (window.isOpen()) {
@@ -211,10 +232,17 @@ int main() {
             validMoves = vector<vector<short>>(8, vector<short>(8, 0));
           }
           if (event.mouseButton.button == sf::Mouse::Left) {
-            if (event.mouseButton.x < 640) {
+            if (event.mouseButton.x < 640) { // on the board
               pair<int, int> to = getField(event.mouseButton.x, event.mouseButton.y);
               if (touched.first != -1 && touched != to) {
                 moved = position.makeMove(touched, to);
+              }
+            } else { // display area
+              if (event.mouseButton.x > 720 && event.mouseButton.x < 740 &&
+                  event.mouseButton.y > 220 && event.mouseButton.y < 240) { // take back
+                if (position.mvCount > 0) {
+                  moved = position.takeBackMove();
+                }
               }
             }
           }
@@ -257,7 +285,7 @@ int main() {
     }
     window.draw(wTimer);
     window.draw(bTimer);
-    // evaluation
+    // made move
     if (moved) {
       pair<int, int> matEval = position.evaluate();
       position.eval = float(matEval.first) / 100 - float(matEval.second) / 100;
@@ -265,6 +293,9 @@ int main() {
       if (position.eval < -20.0) position.eval = -20.f;
       mi[2].position = sf::Vector2f(750.f - position.eval*3.f, 80.f);
       mi[3].position = sf::Vector2f(750.f - position.eval*3.f, 100.f);
+      // current move
+      position.mvCount > 0 ? mvi.setString(position.moves.back())
+                           : mvi.setString("");
       moved = false;
     }
     window.draw(mb);
@@ -306,6 +337,14 @@ int main() {
       }
       window.draw(cp);
     }
+    // current move
+    if (position.checkmate.first != -1) {
+      mvb.setFillColor(sf::Color(200, 0, 0));
+    }
+    window.draw(mvb);
+    window.draw(mvi);
+    // move buttons
+    window.draw(mbt);
 
     // draw board
     window.draw(bs);

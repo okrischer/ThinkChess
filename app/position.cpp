@@ -1,5 +1,5 @@
 #include "position.hpp"
-#include <stdexcept>
+#include <cctype>
 #include <utility>
 
 
@@ -40,6 +40,34 @@ string convertFromBoard(bool cap, Piece* from, pair<int, int> to) {
   move.append(1, colToFile(to.second));
   move.append(1, rowToRank(to.first));
   return move;
+}
+
+// convert files to colums
+int fileToCol(char file) {
+  int col = file - 97;
+  return col;
+}
+
+// convert ranks to rows
+int rankToRow(char rank) {
+  int row = 56 - rank;
+  return row;
+}
+
+// parse move-string and return coordinates
+vector<int> parseMove(string move) {
+  vector<int> coords(5, 0);
+  if (isupper(move[0])) move.erase(0, 1);
+  for (int i = 0; i < 5; i++) {
+    if (i == 0 || i == 3) { // file
+      coords[i] = fileToCol(move[i]);
+    } else if (i == 1 || i == 4) { // rank
+      coords[i] = rankToRow(move[i]);
+    } else { // captured?
+      move[i] == 'x' ? coords[i] = 1 : coords[i] = 0;
+    }
+  }
+  return coords;
 }
 
 // test wether castling is possible
@@ -255,7 +283,6 @@ bool resolveCheck(vector<vector<Piece*>>& bd, bool player) {
                 current->makeMove(rr, cc);
                 bd[row][col] = nullptr;
                 if (!check(bd, player)) {
-                  printBoard(bd); // debug
                   // reset move
                   bd[rr][cc] = pct;
                   bd[row][col] = current;
@@ -275,6 +302,23 @@ bool resolveCheck(vector<vector<Piece*>>& bd, bool player) {
     }
   }
   return false;
+}
+
+// evaluate board
+pair<int, int> evaluateBoard(const vector<vector<Piece*>>& bd) {
+  int white = 0;
+  int black = 0;
+  
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      auto pc = bd[row][col];
+      if (pc) {
+        pc->isWhite() ? white += pc->getValue() : black += pc->getValue();
+      }
+    }
+  }
+  pair<int, int> eval = make_pair(white, black);
+  return eval;
 }
 
 // print board for debug

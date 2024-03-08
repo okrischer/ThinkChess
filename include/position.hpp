@@ -11,6 +11,12 @@ char colToFile(int col);
 // convert rows to ranks
 char rowToRank(int row);
 
+// convert files to colums
+int fileToCol(char file);
+
+// convert ranks to rows
+int rankToRow(char rank);
+
 // get board coordinates
 pair<int, int> getField(int x, int y);
 
@@ -25,6 +31,12 @@ bool check(const vector<vector<Piece*>>& bd, bool white);
 
 // check wether a given check can be resolved
 bool resolveCheck(vector<vector<Piece*>>& bd, bool player);
+
+// evaluate board
+pair<int, int> evaluateBoard(const vector<vector<Piece*>>& bd);
+
+// parse move string and return coordinates
+vector<int> parseMove(string move);
 
 // print board for debug
 void printBoard(const vector<vector<Piece*>>& bd);
@@ -41,19 +53,30 @@ public:
 
   // returns a material evaluation for both players
   pair<int, int> evaluate() {
-    int white = 0;
-    int black = 0;
-    
-    for (int row = 0; row < 8; row++) {
-      for (int col = 0; col < 8; col++) {
-        auto pc = board[row][col];
-        if (pc) {
-          pc->isWhite() ? white += pc->getValue() : black += pc->getValue();
-        }
-      }
+    return evaluateBoard(board);
+  }
+
+  // take back last move
+  bool takeBackMove() {
+    string move;
+    if (moves.size() > 0) {
+      move = moves.back();
+      moves.pop_back();
+      mvCount--;
+    } else return false;
+    vector<int> coords = parseMove(move);
+    auto pc = board[coords[4]][coords[3]];
+    board[coords[1]][coords[0]] = pc;
+    pc->makeMove(coords[1], coords[0]);
+    if (coords[2] == 0) { // normal move
+      board[coords[4]][coords[3]] = nullptr;
+    } else { // captured
+      auto cp = captured.back();
+      board[coords[4]][coords[3]] = cp;
+      captured.pop_back();
     }
-    pair<int, int> eval = make_pair(white, black);
-    return eval;
+    player = !player;
+    return true;
   }
 
   // make a move
@@ -97,16 +120,16 @@ public:
           } else { // cannot get out of check
             move.append(1, '#');
             moves.push_back(move);
-            cout << moves.back() << "\n";
             checkmate = to;
+            mvCount++;
             return true;
           }
         }
         // complete move
         moves.push_back(move);
-        cout << moves.back() << "\n";
         td = {-1, -1};
         player = !player;
+        mvCount++;
         return true;
       } else if (form == 'Q') {
         castled = castled > 0 ? 3 : cast;
@@ -126,16 +149,16 @@ public:
           } else { // cannot get out of check
             move.append(1, '#');
             moves.push_back(move);
-            cout << moves.back() << "\n";
             checkmate = to;
+            mvCount++;
             return true;
           }
         }
         // complete move
         moves.push_back(move);
-        cout << moves.back() << "\n";
         td = {-1, -1};
         player = !player;
+        mvCount++;
         return true;
       }
     } // end castling
@@ -191,16 +214,16 @@ public:
         } else { // cannot get out of check
           move.append(1, '#');
           moves.push_back(move);
-          cout << moves.back() << "\n";
           checkmate = to;
+          mvCount++;
           return true;
         }
       }
       // complete move
       moves.push_back(move);
-      cout << moves.back() << "\n";
       td = {-1, -1};
       player = !player;
+      mvCount++;
       return true;
 
     // illegal move
