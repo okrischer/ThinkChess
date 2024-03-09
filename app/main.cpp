@@ -11,7 +11,7 @@ using namespace std;
 int main() {
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
-  auto window = sf::RenderWindow{ {860, 640u},
+  auto window = sf::RenderWindow{ {870, 640u},
                                   "ThinkChess++",
                                   sf::Style::Close,
                                   settings };
@@ -19,7 +19,7 @@ int main() {
   window.setFramerateLimit(10);
 
   // main state object
-  Position position = Position(); 
+  Position position(0);
 
   // indicates whether a move was successful
   bool moved = false;
@@ -37,15 +37,30 @@ int main() {
   // touched field for making moves
   pair<int, int> touched{-1, -1};
 
-  // initialize board TODO: reset timers when starting a new game
-  resetBoard(position);
-
   // set font for text display
   sf::Font noto;
   if (!noto.loadFromFile("../img/NotoMono-Regular.ttf")) {
     cout << "failed to load the font\n";
     return 1;
   }
+
+  // splash screen
+  sf::RectangleShape bsplash(sf::Vector2f(280.f, 90.f));
+  bsplash.setFillColor(sf::Color(30, 30, 30, 200));
+  bsplash.setPosition(155.f, 235.f);
+  sf::Text welcome;
+  welcome.setFont(noto);
+  welcome.setCharacterSize(16);
+  welcome.setFillColor(sf::Color(220, 0, 0));
+  welcome.setStyle(sf::Text::Bold);
+  welcome.setPosition(170.f, 240.f);
+  welcome.setString("Welcome to ThinkChess++");
+  sf::Text spt;
+  spt.setFont(noto);
+  spt.setCharacterSize(16);
+  spt.setFillColor(sf::Color(0, 220, 0));
+  spt.setPosition(210.f, 270.f);
+  spt.setString("Start new game <S>\nLoad last game <L>");
 
   // set timer
   sf::Text wTimer;
@@ -164,12 +179,22 @@ int main() {
   mi[3].color = sf::Color::Red;
 
   // background for captured pieces
-  sf::RectangleShape bcw(sf::Vector2f(200.f, 20.f));
+  sf::RectangleShape bcw(sf::Vector2f(210.f, 20.f));
   bcw.setFillColor(sf::Color(30, 30, 30, 200));
   bcw.setPosition(650.f, 115.f);
   sf::RectangleShape bcb = bcw;
   bcb.setFillColor(sf::Color(220, 220, 220));
   bcb.move(0.f, 30.f);
+
+  // infotext
+  sf::RectangleShape bit(sf::Vector2f(210.f, 25.f));
+  bit.setFillColor(sf::Color(30, 30, 30, 200));
+  bit.setPosition(650.f, 610.f);
+  sf::Text itt;
+  itt.setFont(noto);
+  itt.setCharacterSize(14);
+  itt.setFillColor(sf::Color(220, 0, 0));
+  itt.setPosition(660.f, 613.f);
 
   // marker for aktive player
   sf::CircleShape wActive(10.f);
@@ -181,7 +206,7 @@ int main() {
   
   // current move background
   sf::RectangleShape mvb(sf::Vector2f(120.f, 20.f));
-  mvb.setFillColor(sf::Color::White);
+  mvb.setFillColor(sf::Color(200, 200, 0, 200));
   mvb.setPosition(690.f, 190.f);
 
   // current move indicator
@@ -208,7 +233,24 @@ int main() {
       if (event.type == sf::Event::Closed) {
         window.close();
       }
-      // game is running in play mode
+      // splash screen
+      if (position.gamestate == 0) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+          position = Position(1);
+          resetBoard(position);
+          bActive.setFillColor(sf::Color::Black);
+          wActive.setFillColor(sf::Color::White);
+          mi[2].position = sf::Vector2f(750.f - position.eval*3.f, 80.f);
+          mi[3].position = sf::Vector2f(750.f - position.eval*3.f, 100.f);
+          mvb.setFillColor(sf::Color(200, 200, 0, 200));
+          mvi.setString("");
+          wTime = 0;
+          bTime = 0;
+          last = chrono::steady_clock::now();
+          bTimer.setString("00:00:00");
+        }
+      }
+      // play mode
       if (position.gamestate == 1) {
         // mouse button pressed
         if (event.type == sf::Event::MouseButtonPressed) {
@@ -236,10 +278,12 @@ int main() {
               pair<int, int> to = getField(event.mouseButton.x, event.mouseButton.y);
               if (touched.first != -1 && touched != to) {
                 moved = position.makeMove(touched, to);
+                touched = {-1, -1};
               }
             } else { // display area
               if (event.mouseButton.x > 720 && event.mouseButton.x < 740 &&
-                  event.mouseButton.y > 220 && event.mouseButton.y < 240) { // take back
+                  event.mouseButton.y > 220 && event.mouseButton.y < 240) {
+                // take back move
                 if (position.mvCount > 0) {
                   moved = position.takeBackMove();
                 }
@@ -296,6 +340,11 @@ int main() {
       // current move
       position.mvCount > 0 ? mvi.setString(position.moves.back())
                            : mvi.setString("");
+      position.checked ? mvb.setFillColor(sf::Color(200, 100, 0, 200))
+                       : mvb.setFillColor(sf::Color(200, 200, 0, 200));
+      position.checked = false;
+      position.info.clear();
+      itt.setString("");
       moved = false;
     }
     window.draw(mb);
@@ -345,6 +394,10 @@ int main() {
     window.draw(mvi);
     // move buttons
     window.draw(mbt);
+    // infotext
+    window.draw(bit);
+    if (!position.info.empty()) itt.setString(position.info);
+    window.draw(itt);
 
     // draw board
     window.draw(bs);
@@ -399,11 +452,27 @@ int main() {
         }
       }
     }
+    // splash screen
+    if (position.gamestate == 0) {
+      window.draw(bsplash);
+      window.draw(spt);
+      if (position.checkmate.first != -1) {
+        string restart;
+        if (position.player) restart = "      White ";
+        else restart = "      Black ";
+        restart.append("wins!");
+        welcome.setString(restart);
+      }
+      window.draw(welcome);
+    } // end splash screen
+
     // display frame
     window.display();
 
     // stop game when checkmate
-    if (position.checkmate.first != -1) position.gamestate = 0;
+    if (position.checkmate.first != -1) {
+      position.gamestate = 0;
+    }
 
   } // end game loop
 } // end main

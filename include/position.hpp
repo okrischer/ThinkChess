@@ -45,10 +45,10 @@ void printBoard(const vector<vector<Piece*>>& bd);
 class Position {
 public:
   ~Position() {}
-  Position() : gamestate{1}, player{true},
+  Position(short gs) : gamestate{gs}, player{true},
                board{8, vector<Piece*>(8)},
-               mvCount{0}, castled{0},
-               checkmate{-1, -1}, eval{0.f}
+               mvCount{0}, castled{0}, checkmate{-1, -1},
+               checked{false}, eval{0.f}
   {}
 
   // returns a material evaluation for both players
@@ -80,20 +80,18 @@ public:
   }
 
   // make a move
-  bool makeMove(pair<int, int>& td, pair<int, int> to) {
+  bool makeMove(pair<int, int> td, pair<int, int> to) {
     auto pcf = board[td.first][td.second];
     auto pct = board[to.first][to.second];
     bool cap = false;
     bool prom = false;
 
     if (!pcf) {
-      cout << "no piece under cursor\n";
-      td = {-1, -1};
+      info = "no piece selected";
       return false;
     }
     if (pcf->isWhite() != player) {
-      cout << "it's not your turn\n";
-      td = {-1, -1};
+      info = "it's not your turn";
       return false;
     }
 
@@ -117,6 +115,7 @@ public:
         if (check(board, !player)) { // gives opponent check
           if (resolveCheck(board, !player)) {
             move.append(1, '+');
+            checked = true;
           } else { // cannot get out of check
             move.append(1, '#');
             moves.push_back(move);
@@ -127,7 +126,6 @@ public:
         }
         // complete move
         moves.push_back(move);
-        td = {-1, -1};
         player = !player;
         mvCount++;
         return true;
@@ -146,6 +144,7 @@ public:
         if (check(board, !player)) { // gives opponent check
           if (resolveCheck(board, !player)) {
             move.append(1, '+');
+            checked = true;
           } else { // cannot get out of check
             move.append(1, '#');
             moves.push_back(move);
@@ -156,7 +155,6 @@ public:
         }
         // complete move
         moves.push_back(move);
-        td = {-1, -1};
         player = !player;
         mvCount++;
         return true;
@@ -170,8 +168,7 @@ public:
         cap = true;
         captured.push_back(pct);
       } else if (pct) { // same color
-        cout << "illegal move!\n";
-        td = {-1, -1};
+        info = "illegal move";
         return false;
       }
 
@@ -197,7 +194,7 @@ public:
       pcf->makeMove(to.first, to.second);
       board[td.first][td.second] = nullptr;
       if (check(board, player)) { // gives itself check
-        cout << "observe check!\n";
+        info = "observe check";
         // reset move
         board[to.first][to.second] = pct;
         if (prom) { // promotion
@@ -206,11 +203,11 @@ public:
         board[td.first][td.second] = pcf;
         pcf->makeMove(td.first, td.second);
         if (cap) captured.pop_back();
-        td = {-1, -1};
         return false;
       } else if (check(board, !player)) { // gives opponent check
         if (resolveCheck(board, !player)) {
           move.append(1, '+');
+          checked = true;
         } else { // cannot get out of check
           move.append(1, '#');
           moves.push_back(move);
@@ -221,20 +218,18 @@ public:
       }
       // complete move
       moves.push_back(move);
-      td = {-1, -1};
       player = !player;
       mvCount++;
       return true;
 
     // illegal move
     } else {
-      cout << "illegal move!\n";
-      td = {-1, -1};
+      info = "illegal move";
       return false;
     }
   }
 
-  // gamestate: 1 = running, 0 = game over
+  // gamestate: 0 = game over, 1 = 2-player, 2 = analyze 
   short gamestate;
 
   // player on turn, starting with white
@@ -258,7 +253,13 @@ public:
   // coordinates of the piece, which gave checkmate
   std::pair<int, int> checkmate;
   
+  // last move gave check
+  bool checked;
+
   // basic evaluation of positions
   float eval;
+
+  // infotext
+  string info;
 }; // end Position
 
