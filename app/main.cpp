@@ -2,11 +2,13 @@
 #include "pieces.hpp"
 #include "display.hpp"
 #include "position.hpp"
+#include <fstream>
 #include <iostream>
 #include <chrono>
 #include <string>
 
 using namespace std;
+using namespace chrono;
 
 int main() {
   sf::ContextSettings settings;
@@ -21,15 +23,19 @@ int main() {
   // main state object
   Position position(0);
 
+  // last played game
+  string lastGame = "../games/last.txt";
+  std::fstream game;
+
   // indicates whether a move was successful
   bool moved = false;
 
   // start timer
   unsigned wTime = 0;
   unsigned bTime = 0;
-  chrono::steady_clock::time_point last;
-  last = chrono::steady_clock::now();
-  chrono::steady_clock::time_point now;
+  steady_clock::time_point last;
+  last = steady_clock::now();
+  steady_clock::time_point now;
 
   // matrix of valid moves for display
   vector<vector<short>> validMoves(8, vector<short>(8, 0));
@@ -232,12 +238,23 @@ int main() {
     for (auto event = sf::Event{}; window.pollEvent(event);) {
       if (event.type == sf::Event::Closed) {
         window.close();
+        if (game.is_open()) {
+          game.flush();
+          game.close();
+        }
       }
       // splash screen
       if (position.gamestate == 0) {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
           position = Position(1);
           resetBoard(position);
+          game.open(lastGame, std::ios::trunc);
+          if (!game.is_open()) {
+            game.clear();
+            game.open(lastGame, std::ios::out); // create file
+            game.close();
+            game.open(lastGame);
+          }
           bActive.setFillColor(sf::Color::Black);
           wActive.setFillColor(sf::Color::White);
           mi[2].position = sf::Vector2f(750.f - position.eval*3.f, 80.f);
@@ -252,6 +269,25 @@ int main() {
       }
       // play mode
       if (position.gamestate == 1) {
+        // draw offer
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+          position.player = !position.player;
+          position.info.clear();
+          itt.setString("Accept a draw? (Y/N)");
+        }
+        // respond to draw offer
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y)) {
+          position.gamestate = 0;
+          if (position.player) game << "\n";
+          game << "1/2-1/2\n";
+          game.flush();
+          game.close();
+          welcome.setString("     It's a draw!");
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) {
+          position.player = !position.player;
+          itt.setString("Draw offer declined.");
+        }
         // mouse button pressed
         if (event.type == sf::Event::MouseButtonPressed) {
           if (event.mouseButton.button == sf::Mouse::Right) {
@@ -296,9 +332,9 @@ int main() {
 
     // set timer
     if (position.gamestate == 1) {
-      now = chrono::steady_clock::now();
+      now = steady_clock::now();
       if (now - last > 1s) {
-        last = chrono::steady_clock::now();
+        last = steady_clock::now();
         if (position.player) wTime++;
         else bTime++;
       }
@@ -345,6 +381,13 @@ int main() {
       position.checked = false;
       position.info.clear();
       itt.setString("");
+      // write to game file
+      if (position.mvCount % 2 == 0) {
+        game << position.moves.back() << "\n";
+      } else {
+        game << (position.mvCount / 2) + 1 << ". "
+             << position.moves.back() << " ";
+      }
       moved = false;
     }
     window.draw(mb);
@@ -472,6 +515,15 @@ int main() {
     // stop game when checkmate
     if (position.checkmate.first != -1) {
       position.gamestate = 0;
+      if (game.is_open()) {
+        if (position.player) {
+          game << "\n";
+          game << "1-0\n";
+        }
+        else game << "0-1\n";
+        game.flush();
+        game.close();
+      }
     }
 
   } // end game loop
