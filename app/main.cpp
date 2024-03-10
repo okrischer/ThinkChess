@@ -30,6 +30,9 @@ int main() {
   // indicates whether a move was successful
   bool moved = false;
 
+  // wether a draw was offered
+  bool draw = false;
+
   // start timer
   unsigned wTime = 0;
   unsigned bTime = 0;
@@ -271,22 +274,22 @@ int main() {
       if (position.gamestate == 1) {
         // draw offer
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-          position.player = !position.player;
-          position.info.clear();
+          draw = true;
           itt.setString("Accept a draw? (Y/N)");
         }
         // respond to draw offer
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y)) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y) && draw) {
           position.gamestate = 0;
+          draw = false;
           if (position.player) game << "\n";
           game << "1/2-1/2\n";
           game.flush();
           game.close();
           welcome.setString("     It's a draw!");
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) {
-          position.player = !position.player;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::N) && draw) {
           itt.setString("Draw offer declined.");
+          draw = false;
         }
         // mouse button pressed
         if (event.type == sf::Event::MouseButtonPressed) {
@@ -367,6 +370,7 @@ int main() {
     window.draw(bTimer);
     // made move
     if (moved) {
+      draw = false;
       pair<int, int> matEval = position.evaluate();
       position.eval = float(matEval.first) / 100 - float(matEval.second) / 100;
       if (position.eval > 20.0) position.eval = 20.f;

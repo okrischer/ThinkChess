@@ -1,6 +1,7 @@
 .cache/
 build/
 doc/_minted-ThinkChess++/
+games/last.txt
 *.aux
 *.bbl
 *.bcf
