@@ -27,11 +27,23 @@ int main() {
   string lastGame = "../games/last.txt";
   std::fstream game;
 
+  // board evaluation for evaluation meter
+  float eval = 0.f;
+
+  // content of moves history
+  string history;
+
   // indicates whether a move was successful
   bool moved = false;
 
   // wether a draw was offered
   bool draw = false;
+
+  // wether a move is taken back
+  bool takeback = false;
+
+  // wether a player wants to give up
+  bool giveUp = false;
 
   // start timer
   unsigned wTime = 0;
@@ -184,8 +196,8 @@ int main() {
   mi[3].position = sf::Vector2f(750.f, 100.f);
   mi[0].color = sf::Color::Green;
   mi[1].color = sf::Color::Green;
-  mi[2].color = sf::Color::Red;
-  mi[3].color = sf::Color::Red;
+  mi[2].color = sf::Color::Black;
+  mi[3].color = sf::Color::Black;
 
   // background for captured pieces
   sf::RectangleShape bcw(sf::Vector2f(210.f, 20.f));
@@ -225,14 +237,15 @@ int main() {
   mvi.setFillColor(sf::Color::Black);
   mvi.setPosition(720.f, 190.f);
 
-  // move bottons
-  sf::VertexArray mbt(sf::Triangles, 6);
-  mbt[0].position = sf::Vector2f(740.f, 220.f);
-  mbt[1].position = sf::Vector2f(720.f, 230.f);
-  mbt[2].position = sf::Vector2f(740.f, 240.f);
-  mbt[3].position = sf::Vector2f(760.f, 220.f);
-  mbt[4].position = sf::Vector2f(780.f, 230.f);
-  mbt[5].position = sf::Vector2f(760.f, 240.f);
+  // moves history
+  sf::RectangleShape hisb(sf::Vector2f(180.f, 380.f));
+  hisb.setFillColor(sf::Color::White);
+  hisb.setPosition(660.f, 220.f);
+  sf::Text hist;
+  hist.setFont(noto);
+  hist.setCharacterSize(12);
+  hist.setFillColor(sf::Color::Black);
+  hist.setPosition(670.f, 230.f);
 
 
   // game loop
@@ -268,12 +281,14 @@ int main() {
           bTime = 0;
           last = chrono::steady_clock::now();
           bTimer.setString("00:00:00");
+          history.clear();
+          hist.setString(history);
         }
       }
       // play mode
       if (position.gamestate == 1) {
         // draw offer
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && !draw) {
           draw = true;
           itt.setString("Accept a draw? (Y/N)");
         }
@@ -281,7 +296,7 @@ int main() {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y) && draw) {
           position.gamestate = 0;
           draw = false;
-          if (position.player) game << "\n";
+          if (!position.player) game << "\n";
           game << "1/2-1/2\n";
           game.flush();
           game.close();
@@ -291,6 +306,58 @@ int main() {
           itt.setString("Draw offer declined.");
           draw = false;
         }
+        // give up
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::G) && !giveUp) {
+          giveUp = true;
+          itt.setString("Sure to give up? (Y/N)");
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y) && giveUp) {
+          position.gamestate = 0;
+          giveUp = false;
+          if (position.player) {
+            game << "0-1\n";
+            welcome.setString("    White gives up!\n");
+          } else {
+            game << "\n";
+            game << "1-0\n";
+            welcome.setString("    Black gives up!\n");
+          }
+          game.flush();
+          game.close();
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::N) && giveUp) {
+          giveUp = false;
+          itt.setString("Okay, move on.");
+        }
+        // take back move
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::T) && !takeback) {
+          takeback = true;
+          if (position.mvCount > 0) {
+            string lastMove = position.moves.back();
+            int sz = lastMove.size();
+            moved = position.takeBackMove();
+            if (moved) {
+              if (position.mvCount > 0) {
+                string newLast = position.moves.back();
+                mvi.setString(newLast);
+                newLast.back() == '+' ? mvb.setFillColor(sf::Color(200, 100, 0, 200))
+                                      : mvb.setFillColor(sf::Color(200, 200, 0, 200));
+              } else {
+                mvi.setString("");
+              }
+              if (position.mvCount % 2 == 0) { // last move was white
+                if (position.mvCount >= 199) sz += 6;
+                else if (position.mvCount >= 19) sz += 5;
+                else sz += 4;
+              } else sz += 1; // last move was black
+              game.seekp(-sz, std::ios_base::end);
+              history = history.substr(0, history.size() - sz);
+              hist.setString(history);
+              moved = false;
+            }
+          }
+        }
+
         // mouse button pressed
         if (event.type == sf::Event::MouseButtonPressed) {
           if (event.mouseButton.button == sf::Mouse::Right) {
@@ -318,14 +385,6 @@ int main() {
               if (touched.first != -1 && touched != to) {
                 moved = position.makeMove(touched, to);
                 touched = {-1, -1};
-              }
-            } else { // display area
-              if (event.mouseButton.x > 720 && event.mouseButton.x < 740 &&
-                  event.mouseButton.y > 220 && event.mouseButton.y < 240) {
-                // take back move
-                if (position.mvCount > 0) {
-                  moved = position.takeBackMove();
-                }
               }
             }
           }
@@ -368,15 +427,37 @@ int main() {
     }
     window.draw(wTimer);
     window.draw(bTimer);
+    window.draw(hisb);
     // made move
     if (moved) {
       draw = false;
-      pair<int, int> matEval = position.evaluate();
-      position.eval = float(matEval.first) / 100 - float(matEval.second) / 100;
-      if (position.eval > 20.0) position.eval = 20.f;
-      if (position.eval < -20.0) position.eval = -20.f;
-      mi[2].position = sf::Vector2f(750.f - position.eval*3.f, 80.f);
-      mi[3].position = sf::Vector2f(750.f - position.eval*3.f, 100.f);
+      takeback = false;
+      if (position.mvCount % 2 == 0) { // update after move completed
+        pair<int, int> matEval = position.evaluate();
+        position.eval = float(matEval.first) / 100 - float(matEval.second) / 100;
+        eval = position.eval;
+        if (eval > 10.0) {
+          eval = 10.f;
+          mb[2].color = sf::Color(200, 0, 0, 200);
+          mb[4].color = sf::Color(200, 0, 0, 200);
+          mb[5].color = sf::Color(200, 0, 0, 200);
+        }
+        if (eval < -10.0) {
+          eval = -10.f;
+          mb[0].color = sf::Color(200, 0, 0, 200);
+          mb[1].color = sf::Color(200, 0, 0, 200);
+          mb[3].color = sf::Color(200, 0, 0, 200);
+        }
+        mi[2].position = sf::Vector2f(750.f + eval*6.f, 80.f);
+        mi[3].position = sf::Vector2f(750.f + eval*6.f, 100.f);
+        if (eval > 0) {
+          mi[2].color = sf::Color::White;
+          mi[3].color = sf::Color::White;
+        } else {
+          mi[2].color = sf::Color::Black;
+          mi[3].color = sf::Color::Black;
+        }
+      }
       // current move
       position.mvCount > 0 ? mvi.setString(position.moves.back())
                            : mvi.setString("");
@@ -385,17 +466,29 @@ int main() {
       position.checked = false;
       position.info.clear();
       itt.setString("");
-      // write to game file
+      // write to game file and to moves history
       if (position.mvCount % 2 == 0) {
         game << position.moves.back() << "\n";
+        history += position.moves.back();
+        history += "\n";
       } else {
         game << (position.mvCount / 2) + 1 << ". "
              << position.moves.back() << " ";
+        history += to_string((position.mvCount / 2) + 1);
+        history += ". ";
+        history += position.moves.back();
+        history += " ";
       }
+      if (position.mvCount > 52 && position.mvCount % 2 == 1) { // trim history string
+        auto pos = history.find("\n") + 1;
+        history = history.substr(pos, history.size());
+      }
+      hist.setString(history);
       moved = false;
     }
     window.draw(mb);
     window.draw(mi);
+    window.draw(hist);
     // captured pieces
     window.draw(bcw);
     window.draw(bcb);
@@ -439,8 +532,6 @@ int main() {
     }
     window.draw(mvb);
     window.draw(mvi);
-    // move buttons
-    window.draw(mbt);
     // infotext
     window.draw(bit);
     if (!position.info.empty()) itt.setString(position.info);

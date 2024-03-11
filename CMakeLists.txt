@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ThinkChess VERSION 0.1 LANGUAGES CXX)
+project(ThinkChess VERSION 0.3 LANGUAGES CXX)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
