@@ -2,6 +2,7 @@
 
 #include "pieces.hpp"
 #include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -64,8 +65,67 @@ public:
       moves.pop_back();
       mvCount--;
     } else return false;
+    // castling
+    if (move.back() == '0' || move[move.size()-2] == '0') {
+      if (move.back() == '+') move.pop_back();
+      char form;
+      move == "0-0" ? form = 'K' : form = 'Q';
+      bool white = (mvCount % 2 == 0);
+      if (white && form == 'K') {
+        board[7][4] = board[7][6];
+        board[7][6] = nullptr;
+        auto king = board[7][4];
+        king->makeMove(7, 4);
+        board[7][7] = board[7][5];
+        board[7][5] = nullptr;
+        auto rook = board[7][7];
+        rook->makeMove(7, 7);
+        castled == 1 ? castled = 0 : castled = 2;
+      }
+      if (white && form == 'Q') {
+        board[7][4] = board[7][2];
+        board[7][2] = nullptr;
+        auto king = board[7][4];
+        king->makeMove(7, 4);
+        board[7][0] = board[7][3];
+        board[7][3] = nullptr;
+        auto rook = board[7][0];
+        rook->makeMove(7, 0);
+        castled == 1 ? castled = 0 : castled = 2;
+      }
+      if (!white && form == 'K') {
+        board[0][4] = board[0][6];
+        board[0][6] = nullptr;
+        auto king = board[0][4];
+        king->makeMove(0, 4);
+        board[0][7] = board[0][5];
+        board[0][5] = nullptr;
+        auto rook = board[0][7];
+        rook->makeMove(0, 7);
+        castled == 2 ? castled = 0 : castled = 1;
+      }
+      if (!white && form == 'Q') {
+        board[0][4] = board[0][2];
+        board[0][2] = nullptr;
+        auto king = board[0][4];
+        king->makeMove(0, 4);
+        board[0][0] = board[0][3];
+        board[0][3] = nullptr;
+        auto rook = board[0][0];
+        rook->makeMove(0, 0);
+        castled == 2 ? castled = 0 : castled = 1;
+      }
+      player = !player;
+      return true;
+    }
+    // regular move
     vector<int> coords = parseMove(move);
     auto pc = board[coords[4]][coords[3]];
+    // promotion
+    if (move.back() == 'Q' || move[move.size()-2] == 'Q') {
+      bool white = coords[4] == 0;
+      pc = new Pawn(white, coords[1], coords[0]);
+    }
     board[coords[1]][coords[0]] = pc;
     pc->makeMove(coords[1], coords[0]);
     if (coords[2] == 0) { // normal move

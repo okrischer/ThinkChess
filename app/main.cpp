@@ -332,29 +332,27 @@ int main() {
         // take back move
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::T) && !takeback) {
           takeback = true;
-          if (position.mvCount > 0) {
-            string lastMove = position.moves.back();
-            int sz = lastMove.size();
-            moved = position.takeBackMove();
-            if (moved) {
-              if (position.mvCount > 0) {
-                string newLast = position.moves.back();
-                mvi.setString(newLast);
-                newLast.back() == '+' ? mvb.setFillColor(sf::Color(200, 100, 0, 200))
-                                      : mvb.setFillColor(sf::Color(200, 200, 0, 200));
-              } else {
-                mvi.setString("");
-              }
-              if (position.mvCount % 2 == 0) { // last move was white
-                if (position.mvCount >= 199) sz += 6;
-                else if (position.mvCount >= 19) sz += 5;
-                else sz += 4;
-              } else sz += 1; // last move was black
-              game.seekp(-sz, std::ios_base::end);
-              history = history.substr(0, history.size() - sz);
-              hist.setString(history);
-              moved = false;
+          string lastMove = position.moves.back();
+          int sz = lastMove.size();
+          moved = position.takeBackMove();
+          if (moved) {
+            if (position.mvCount > 0) {
+              string newLast = position.moves.back();
+              mvi.setString(newLast);
+              newLast.back() == '+' ? mvb.setFillColor(sf::Color(200, 100, 0, 200))
+                                    : mvb.setFillColor(sf::Color(200, 200, 0, 200));
+            } else {
+              mvi.setString("");
             }
+            if (position.mvCount % 2 == 0) { // last move was white
+              if (position.mvCount >= 199) sz += 6;
+              else if (position.mvCount >= 19) sz += 5;
+              else sz += 4;
+            } else sz += 1; // last move was black
+            game.seekp(-sz, std::ios_base::end);
+            history = history.substr(0, history.size() - sz);
+            hist.setString(history);
+            moved = false;
           }
         }
 
