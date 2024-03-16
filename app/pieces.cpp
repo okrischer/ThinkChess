@@ -103,32 +103,27 @@ bool Queen::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
 
 bool Pawn::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = false;
+  auto pc = bd[r][c];
   if (white) {
     if (r == row-1 && c == col) { // move
-      auto pc = bd[r][c];
       if (!pc) valid = true;
     }
     if (row == 6 && r == 4 && c == col) { // initial move
-      auto pc2 = bd[r][c];
       auto pc1 = bd[5][c];
-      if (!pc1 && !pc2) valid = true;
+      if (!pc1 && !pc) valid = true;
     }
     if (r == row-1 && (c == col-1 || c == col+1)) { // capture
-      auto pc = bd[r][c];
       if (pc && pc->isWhite() != white) valid = true;
     }
   } else { // black
     if (r == row+1 && c == col) { // move
-      auto pc = bd[r][c];
       if (!pc) valid = true;
     }
     if (row == 1 && r == 3 && c == col) { // initial move
-      auto pc2 = bd[r][c];
       auto pc1 = bd[2][c];
-      if (!pc1 && !pc2) valid = true;
+      if (!pc1 && !pc) valid = true;
     }
     if (r == row+1 && (c == col-1 || c == col+1)) { // capture
-      auto pc = bd[r][c];
       if (pc && pc->isWhite() != white) valid = true;
     }
   }

@@ -431,8 +431,7 @@ int main() {
       draw = false;
       takeback = false;
       if (position.mvCount % 2 == 0) { // update after move completed
-        pair<int, int> matEval = position.evaluate();
-        position.eval = float(matEval.first) / 100 - float(matEval.second) / 100;
+        position.evaluate();
         eval = position.eval;
         if (eval > 10.0) {
           eval = 10.f;

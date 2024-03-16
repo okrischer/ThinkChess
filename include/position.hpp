@@ -53,8 +53,10 @@ public:
   {}
 
   // returns a material evaluation for both players
-  pair<int, int> evaluate() {
-    return evaluateBoard(board);
+  void evaluate() {
+    pair<int, int> matEval = evaluateBoard(board);
+    eval = float(matEval.first) / 100
+         - float(matEval.second) / 100;
   }
 
   // take back last move
@@ -140,8 +142,8 @@ public:
   }
 
   // make a move
-  bool makeMove(pair<int, int> td, pair<int, int> to) {
-    auto pcf = board[td.first][td.second];
+  bool makeMove(pair<int, int> from, pair<int, int> to) {
+    auto pcf = board[from.first][from.second];
     auto pct = board[to.first][to.second];
     bool cap = false;
     bool prom = false;
@@ -164,14 +166,14 @@ public:
         castled = castled > 0 ? 3 : cast;
         move = "0-0";
         // make king move
-        board[td.first][td.second+2] = pcf;
-        pcf->makeMove(td.first, td.second+2);
-        board[td.first][td.second] = nullptr;
+        board[from.first][from.second+2] = pcf;
+        pcf->makeMove(from.first, from.second+2);
+        board[from.first][from.second] = nullptr;
         // make rook move
-        auto rook = board[td.first][7];
-        board[td.first][td.second+1] = rook;
-        rook->makeMove(td.first, td.second+1);
-        board[td.first][7] = nullptr;
+        auto rook = board[from.first][7];
+        board[from.first][from.second+1] = rook;
+        rook->makeMove(from.first, from.second+1);
+        board[from.first][7] = nullptr;
         if (check(board, !player)) { // gives opponent check
           if (resolveCheck(board, !player)) {
             move.append(1, '+');
@@ -193,14 +195,14 @@ public:
         castled = castled > 0 ? 3 : cast;
         move = "0-0-0";
         // make king move
-        board[td.first][td.second-2] = pcf;
-        pcf->makeMove(td.first, td.second-2);
-        board[td.first][td.second] = nullptr;
+        board[from.first][from.second-2] = pcf;
+        pcf->makeMove(from.first, from.second-2);
+        board[from.first][from.second] = nullptr;
         // make rook move
-        auto rook = board[td.first][0];
-        board[td.first][td.second-1] = rook;
-        rook->makeMove(td.first, td.second-1);
-        board[td.first][0] = nullptr;
+        auto rook = board[from.first][0];
+        board[from.first][from.second-1] = rook;
+        rook->makeMove(from.first, from.second-1);
+        board[from.first][0] = nullptr;
         if (check(board, !player)) { // gives opponent check
           if (resolveCheck(board, !player)) {
             move.append(1, '+');
@@ -252,7 +254,7 @@ public:
       // make move
       board[to.first][to.second] = pcf;
       pcf->makeMove(to.first, to.second);
-      board[td.first][td.second] = nullptr;
+      board[from.first][from.second] = nullptr;
       if (check(board, player)) { // gives itself check
         info = "observe check";
         // reset move
@@ -260,8 +262,8 @@ public:
         if (prom) { // promotion
           pcf = new Pawn(pcf->isWhite(), pcf->getRow(), pcf->getCol());
         }
-        board[td.first][td.second] = pcf;
-        pcf->makeMove(td.first, td.second);
+        board[from.first][from.second] = pcf;
+        pcf->makeMove(from.first, from.second);
         if (cap) captured.pop_back();
         return false;
       } else if (check(board, !player)) { // gives opponent check

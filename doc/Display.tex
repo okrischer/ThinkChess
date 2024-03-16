@@ -106,7 +106,7 @@ If you run the app now, you would see an empty chess board:
 \includegraphics[width=.5\linewidth]{img/emptyBoard.jpg}
 \end{center}
 
-\subsection{The pieces}
+\subsection{The pieces}\label{subsec:pieces}
 Not that interesting so far, so we're going to add the chess pieces at their initial position.
 For that, let's introduce the pieces at first: they come in two colors, \emph{white}
 and \emph{black}, each for one player, and they are called as follows
@@ -582,7 +582,7 @@ The function \mintinline{cpp}{isValid} for the king is implemented in the file
 #include <vector>
 using namespace std;
 
-bool King::isValid(vector<vector<Piece*>>& bd, int r, int c) {
+bool King::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = abs(r-row) <= 1 && abs(c-col) <= 1;
   return valid;
 }
@@ -619,7 +619,7 @@ Observe that a knight, placed on a dark field, can reach only light fields, and 
 Its \mintinline{cpp}{isValid} function is implemented like so:
 
 \begin{cpp}
-bool Knight::isValid(vector<vector<Piece*>>& bd, int r, int c) {
+bool Knight::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = (abs(r-row) == 1 && abs(c-col) == 2) ||
                (abs(r-row) == 2 && abs(c-col) == 1);
   return valid;
@@ -637,7 +637,7 @@ As the rooks movement is limited by other pieces on its way, we have to take tho
 into account for implementing its \mintinline{cpp}{isValid} function:
 
 \begin{cpp*}{linenos}
-bool Rook::isValid(vector<vector<Piece*>>& bd, int r, int c) {
+bool Rook::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = r == row || c == col;
   if (r == row && abs(c-col) > 1) { // same row
     if (c < col) { // left
@@ -705,7 +705,7 @@ We use essentially the same logic as for the rook, but this time we check for pi
 the same diagonal:
 
 \begin{cpp}
-bool Bishop::isValid(vector<vector<Piece*>>& bd, int r, int c) {
+bool Bishop::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = r-c == row-col || r+c == row+col;
   if (r-c == row-col) { // same major diagonal
     if (r < row) { // upper
@@ -774,7 +774,7 @@ We use a little trick to get the queens valid moves: as the queen can move like 
 \emph{and} a bishop, we just check for valid moves for \emph{either} of them:
 
 \begin{cpp}
-bool Queen::isValid(vector<vector<Piece*>>& bd,int r,int c) {
+bool Queen::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   auto rook = new Rook(white, row, col);
   auto bishop = new Bishop(white, row, col);
   bool valid = rook->isValid(bd, r, c) || bishop->isValid(bd, r, c);
@@ -813,32 +813,29 @@ which we will cover in section~\ref{sec:specmoves}.
 Here's the code to put the rules in action:
 
 \begin{cpp*}{linenos}
-bool Pawn::isValid(vector<vector<Piece*>>& bd, int r, int c) {
+bool Pawn::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = false;
+  auto pc = bd[r][c];
   if (white) {
     if (r == row-1 && c == col) { // move
-      auto pc = bd[r][c];
       if (!pc) valid = true;
     }
     if (row == 6 && r == 4 && c == col) { // initial move
-      auto pc = bd[r][c];
-      if (!pc) valid = true;
+      auto pc1 = bd[5][c];
+      if (!pc1 && !pc) valid = true;
     }
     if (r == row-1 && (c == col-1 || c == col+1)) { // capture
-      auto pc = bd[r][c];
       if (pc && pc->isWhite() != white) valid = true;
     }
   } else { // black
     if (r == row+1 && c == col) { // move
-      auto pc = bd[r][c];
       if (!pc) valid = true;
     }
     if (row == 1 && r == 3 && c == col) { // initial move
-      auto pc = bd[r][c];
-      if (!pc) valid = true;
+      auto pc1 = bd[2][c];
+      if (!pc1 && !pc) valid = true;
     }
     if (r == row+1 && (c == col-1 || c == col+1)) { // capture
-      auto pc = bd[r][c];
       if (pc && pc->isWhite() != white) valid = true;
     }
   }
@@ -846,9 +843,9 @@ bool Pawn::isValid(vector<vector<Piece*>>& bd, int r, int c) {
 }
 \end{cpp*}
 
-We have to consider white and black pawns separately, as they move in different directions (3, 16).
-If there's no piece in front of the pawn, it can move to that field (6, 19).
-If the pawn is on its initial position (8, 21), it also can move two squares ahead, if that field
-isn't occopied (10, 23).
-If there's a piece diagonal in front of the pawn (12, 25), it can be captured, if it is of the
-other color (14, 27).
+We have to consider white and black pawns separately, as they move in different directions (4, 15).
+If there's no piece in front of the pawn, it can move to that field (6, 17).
+If the pawn is on its initial position (8, 19), it also can move two squares ahead, if both fields
+ahead aren't occopied (10, 24).
+If there's a piece diagonal in front of the pawn (12, 23), it can be captured, if it is of the
+other color (13, 24).
