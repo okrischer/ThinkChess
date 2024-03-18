@@ -3,6 +3,7 @@
 #include "pieces.hpp"
 #include <iostream>
 #include <stdexcept>
+#include <utility>
 
 using namespace std;
 
@@ -23,9 +24,6 @@ pair<int, int> getField(int x, int y);
 
 // convert board coordinates to moves notation
 string convertFromBoard(bool cap, Piece* from, pair<int, int> to);
-
-// test wether castling is possible
-char castling(vector<vector<Piece*>>& bd, Piece* king, pair<int, int> to);
 
 // test for check
 bool check(const vector<vector<Piece*>>& bd, bool white);
@@ -57,6 +55,187 @@ public:
     pair<int, int> matEval = evaluateBoard(board);
     eval = float(matEval.first) / 100
          - float(matEval.second) / 100;
+  }
+
+  // test wether castling is possible
+  char castling(Piece* king, pair<int, int> to) {
+    if (check(board, king->isWhite())) return 'N'; // king is in check
+    string history;
+    for (auto mv : moves) {
+      history += mv;
+    }
+    if (king->isWhite()) { // white
+      auto pos = history.find("Ke1");
+      if (pos != std::string::npos) return 'N'; // king has moved
+      if (king->getRow() == 7 && king->getCol() == 4) {
+        if (to.first == 7 && to.second == 6) { // kingside
+          auto rook = board[7][7];
+          if (!rook || rook->getType() != 'R' || rook->isWhite() != king->isWhite()) {
+            return 'N'; // no rook
+          } else {
+            auto pos = history.find("Rh1");
+            if (pos != std::string::npos) return 'N'; // rook has moved
+          }
+          auto pc1 = board[7][5];
+          auto pc2 = board[7][6];
+          if (pc1 || pc2) return 'N'; // fields occupied
+          else {
+            // test for check
+            board[7][5] = king;
+            king->makeMove(7, 5);
+            if (check(board, king->isWhite())) {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][5] = nullptr;
+              return 'N';
+            } else {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][5] = nullptr;
+            }
+            board[7][6] = king;
+            king->makeMove(7, 6);
+            if (check(board, king->isWhite())) {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][6] = nullptr;
+              return 'N';
+            } else {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][6] = nullptr;
+            }
+            return 'K';
+          }
+        } else if (to.first == 7 && to.second == 2) { // queenside
+          auto rook = board[7][0];
+          if (!rook || rook->getType() != 'R' || rook->isWhite() != king->isWhite()) {
+            return 'N'; // no rook
+          } else {
+            auto pos = history.find("Ra1");
+            if (pos != std::string::npos) return 'N'; // rook has moved
+          }
+          auto pc1 = board[7][1];
+          auto pc2 = board[7][2];
+          auto pc3 = board[7][3];
+          if (pc1 || pc2 || pc3) return 'N'; // fields occupied
+          else {
+            // test for check
+            board[7][3] = king;
+            king->makeMove(7, 3);
+            if (check(board, king->isWhite())) {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][3] = nullptr;
+              return 'N';
+            } else {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][3] = nullptr;
+            }
+            board[7][2] = king;
+            king->makeMove(7, 2);
+            if (check(board, king->isWhite())) {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][2] = nullptr;
+              return 'N';
+            } else {
+              board[7][4] = king;
+              king->makeMove(7, 4);
+              board[7][2] = nullptr;
+            }
+            return 'Q';
+          }
+        }
+      }
+    } else { // black
+      auto pos = history.find("Ke8");
+      if (pos != std::string::npos) return 'N'; // king has moved
+      if (king->getRow() == 0 && king->getCol() == 4) {
+        if (to.first == 0 && to.second == 6) { // kingside
+          auto rook = board[0][7];
+          if (!rook || rook->getType() != 'R' || rook->isWhite() != king->isWhite()) {
+            return 'N'; // no rook
+          } else {
+            auto pos = history.find("Rh8");
+            if (pos != std::string::npos) return 'N'; // rook has moved
+          }
+          auto pc1 = board[0][5];
+          auto pc2 = board[0][6];
+          if (pc1 || pc2) return 'N'; // fields occupied
+          else {
+            // test for check
+            board[0][5] = king;
+            king->makeMove(0, 5);
+            if (check(board, king->isWhite())) {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][5] = nullptr;
+              return 'N';
+            } else {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][5] = nullptr;
+            }
+            board[0][6] = king;
+            king->makeMove(0, 6);
+            if (check(board, king->isWhite())) {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][6] = nullptr;
+              return 'N';
+            } else {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][6] = nullptr;
+            }
+            return 'K';
+          }
+        } else if (to.first == 0 && to.second == 2) { // queenside
+          auto rook = board[0][0];
+          if (!rook || rook->getType() != 'R' || rook->isWhite() != king->isWhite()) {
+            return 'N'; // no rook
+          } else {
+            auto pos = history.find("Ra8");
+            if (pos != std::string::npos) return 'N'; // rook has moved
+          }
+          auto pc1 = board[0][1];
+          auto pc2 = board[0][2];
+          auto pc3 = board[0][3];
+          if (pc1 || pc2 || pc3) return 'N'; // fields occupied
+          else {
+            // test for check
+            board[0][3] = king;
+            king->makeMove(0, 3);
+            if (check(board, king->isWhite())) {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][3] = nullptr;
+              return 'N';
+            } else {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][3] = nullptr;
+            }
+            board[0][2] = king;
+            king->makeMove(0, 2);
+            if (check(board, king->isWhite())) {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][2] = nullptr;
+              return 'N';
+            } else {
+              board[0][4] = king;
+              king->makeMove(0, 4);
+              board[0][2] = nullptr;
+            }
+            return 'Q';
+          }
+        }
+      }
+    }
+    return 'N';
   }
 
   // take back last move
@@ -120,7 +299,26 @@ public:
       player = !player;
       return true;
     }
-    // regular move
+    // en passant
+    if (move.back() == 'p' && move[move.size()-2] == 'e') {
+      move.pop_back();
+      move.pop_back();
+      vector<int> coords = parseMove(move);
+      auto pc = board[coords[4]][coords[3]];
+      board[coords[4]][coords[3]] = nullptr;
+      board[coords[1]][coords[0]] = pc;
+      pc->makeMove(coords[1], coords[0]);
+      auto cp = captured.back();
+      captured.pop_back();
+      bool white = (mvCount % 2 == 0);
+      if (white) {
+        board[coords[4]+1][coords[3]] = cp;
+      } else {
+        board[coords[4]-1][coords[3]] = cp;
+      }
+      player = !player;
+      return true;
+    }
     vector<int> coords = parseMove(move);
     auto pc = board[coords[4]][coords[3]];
     // promotion
@@ -147,6 +345,7 @@ public:
     auto pct = board[to.first][to.second];
     bool cap = false;
     bool prom = false;
+    bool passant = false;
 
     if (!pcf) {
       info = "no piece selected";
@@ -161,7 +360,7 @@ public:
     short cast = player ? 1 : 2;
     if (castled < 3 && castled != cast && pcf->getType() == 'K' && !pct) {
       string move = "";
-      char form = castling(board, pcf, to);
+      char form = castling(pcf, to);
       if (form == 'K') {
         castled = castled > 0 ? 3 : cast;
         move = "0-0";
@@ -234,7 +433,53 @@ public:
         return false;
       }
 
+      // en passant
+      if (pcf && pcf->getType() == 'P') {
+        if (pcf->isWhite() && pcf->getRow() == 3) { // white
+          if (!pct) {
+            auto pawn = board[pcf->getRow()][to.second];
+            if (pawn && pawn->getType() == 'P' && pawn->isWhite() != player) {
+              string lastMove = moves.back();
+              pair<int, int> epTo = make_pair(pawn->getRow(), pawn->getCol());
+              auto epPc = new Pawn(!player, 1, to.second);
+              string ep = convertFromBoard(false, epPc, epTo);
+              delete epPc;
+              if (ep != lastMove) {
+                info = "illegal move";
+                return false;
+              } else {
+                passant = true;
+                cap = true;
+                captured.push_back(pawn);
+                board[pcf->getRow()][to.second] = nullptr;
+              }
+            }
+          }
+        } else if (!pcf->isWhite() && pcf->getRow() == 4) { // black
+          if (!pct) {
+            auto pawn = board[pcf->getRow()][to.second];
+            if (pawn && pawn->getType() == 'P' && pawn->isWhite() != player) {
+              string lastMove = moves.back();
+              pair<int, int> epTo = make_pair(pawn->getRow(), pawn->getCol());
+              auto epPc = new Pawn(!player, 6, to.second);
+              string ep = convertFromBoard(false, epPc, epTo);
+              delete epPc;
+              if (ep != lastMove) {
+                info = "illegal move";
+                return false;
+              } else {
+                passant = true;
+                cap = true;
+                captured.push_back(pawn);
+                board[pcf->getRow()][to.second] = nullptr;
+              }
+            }
+          }
+        }
+      } // end en passant
+
       string move = convertFromBoard(cap, pcf, to);
+      if (passant) move.append("ep");
 
       // promotion
       if (pcf && pcf->getType() == 'P') {
@@ -249,7 +494,6 @@ public:
         }
       } // end promotion
 
-      // TODO: en passant
 
       // make move
       board[to.first][to.second] = pcf;

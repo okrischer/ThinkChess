@@ -105,26 +105,50 @@ bool Pawn::isValid(const vector<vector<Piece*>>& bd, int r, int c) {
   bool valid = false;
   auto pc = bd[r][c];
   if (white) {
-    if (r == row-1 && c == col) { // move
+    // regular move
+    if (r == row-1 && c == col) {
       if (!pc) valid = true;
     }
-    if (row == 6 && r == 4 && c == col) { // initial move
+    // initial move
+    if (row == 6 && r == 4 && c == col) {
       auto pc1 = bd[5][c];
       if (!pc1 && !pc) valid = true;
     }
-    if (r == row-1 && (c == col-1 || c == col+1)) { // capture
+    // capture
+    if (r == row-1 && abs(col-c) == 1) {
       if (pc && pc->isWhite() != white) valid = true;
     }
+    // en passant
+    if (row == 3 && r == 2 && abs(col-c) == 1) {
+      if (!pc) {
+        auto pawn = bd[row][c];
+        if (pawn && pawn->getType() == 'P' && pawn->isWhite() != white) {
+          valid = true;
+        }
+      }
+    }
   } else { // black
-    if (r == row+1 && c == col) { // move
+    // regular move
+    if (r == row+1 && c == col) {
       if (!pc) valid = true;
     }
-    if (row == 1 && r == 3 && c == col) { // initial move
+    // initial move
+    if (row == 1 && r == 3 && c == col) {
       auto pc1 = bd[2][c];
       if (!pc1 && !pc) valid = true;
     }
-    if (r == row+1 && (c == col-1 || c == col+1)) { // capture
+    // capture
+    if (r == row+1 && abs(col-c) == 1) {
       if (pc && pc->isWhite() != white) valid = true;
+    }
+    // en passant
+    if (row == 4 && r == 5 && abs(col-c) == 1) {
+      if (!pc) {
+        auto pawn = bd[row][c];
+        if (pawn && pawn->getType() == 'P' && pawn->isWhite() != white) {
+          valid = true;
+        }
+      }
     }
   }
   return valid;
