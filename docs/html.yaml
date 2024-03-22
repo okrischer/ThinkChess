@@ -13,7 +13,7 @@ css: template.css
 
 template: template.html
 
-output-file: ThinkChess.html
+output-file: index.html
 
 toc: true
 
