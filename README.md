@@ -38,8 +38,8 @@ This repository has several branches, each dedicated to a chapter of the tutoria
 If you want to follow along the tutorial, check out the code for that chapter, e.g.
 `git checkout chap1`, and start working on the code from there.
 
-The tutorial itself comes as a html file and is located in the **docs/** directory.
-If you have `pandoc` installed on your machine, you can also build the documentation
-with `pandoc -dhtml` from that folder, which will produce
+The tutorial itself comes as a html file and is located in the `docs` directory.
+If you have [pandoc](https://pandoc.org/) installed on your machine, you can also build
+the documentation with `pandoc -dhtml` from that folder, which will produce
 the tutorial up to the given chapter.
 
