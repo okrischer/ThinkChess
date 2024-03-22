@@ -1,0 +1,27 @@
+input-files:
+  - Display.md
+  - Play.md
+  - GUI.md
+
+from: markdown+fenced_code_attributes
+
+to: html
+
+self-contained: true
+
+css: template.css
+
+template: template.html
+
+output-file: ThinkChess.html
+
+toc: true
+
+toc-depth: 3
+
+reference-links: true
+
+number-sections: true
+
+title-prefix: ThinkChess++
+

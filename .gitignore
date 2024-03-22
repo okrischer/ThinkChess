@@ -11,6 +11,7 @@ games/last.txt
 *.gz
 *.log
 *.out
+*.pdf
 *.swp
 *.toc
 *.xml
