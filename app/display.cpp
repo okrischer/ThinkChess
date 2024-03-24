@@ -2,6 +2,20 @@
 
 using namespace std;
 
+// get path for game to load
+filesystem::path getGame(int fn, filesystem::path games) {
+  int cnt = 0;
+  filesystem::path p;
+  for (auto const& file : filesystem::directory_iterator{games}) {
+    if (cnt == fn) {
+      p = file.path();
+      break;
+    }
+    cnt++;
+  }
+  return p;
+}
+
 // calculates and returns the timer string
 string getTime(unsigned t) {
   string result = "";

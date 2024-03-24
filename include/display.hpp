@@ -2,7 +2,11 @@
 
 #include "position.hpp"
 #include <string>
+#include <filesystem>
 
+
+// get path for game to load
+std::filesystem::path getGame(int fn, std::filesystem::path games);
 
 // reset board for new game
 void resetBoard(Position& pos);

@@ -2,6 +2,7 @@
 #include "pieces.hpp"
 #include "display.hpp"
 #include "position.hpp"
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <chrono>
@@ -24,8 +25,11 @@ int main() {
   Position position(0);
 
   // last played game
-  string lastGame = "../games/last.txt";
+  filesystem::path actGame = "../games/lastGame";
   std::fstream game;
+
+  // games folder
+  const filesystem::path games = "../games";
 
   // board evaluation for evaluation meter
   float eval = 0.f;
@@ -44,6 +48,10 @@ int main() {
 
   // wether a player wants to give up
   bool giveUp = false;
+
+  // load game file
+  bool load = false;
+  bool loaded = false;
 
   // start timer
   unsigned wTime = 0;
@@ -80,8 +88,18 @@ int main() {
   spt.setFont(noto);
   spt.setCharacterSize(16);
   spt.setFillColor(sf::Color(0, 220, 0));
-  spt.setPosition(210.f, 270.f);
-  spt.setString("Start new game <S>\nLoad last game <L>");
+  spt.setPosition(230.f, 270.f);
+  spt.setString("Start game <S>\nLoad  game <L>");
+
+  // file loader
+  sf::RectangleShape bloader(sf::Vector2f(240.f, 320.f));
+  bloader.setFillColor(sf::Color(30, 30, 30, 200));
+  bloader.setPosition(160.f, 160.f);
+  sf::Text tfiles;
+  tfiles.setFont(noto);
+  tfiles.setCharacterSize(14);
+  tfiles.setFillColor(sf::Color(0, 220, 0));
+  tfiles.setPosition(170.f, 165.f);
 
   // set timer
   sf::Text wTimer;
@@ -261,20 +279,37 @@ int main() {
       }
       // splash screen
       if (position.gamestate == 0) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::L)) {
+          load = true;
+          position = Position(2);
+          resetBoard(position);
+          string files;
+          int cnt = 0;
+          for (auto const& game : filesystem::directory_iterator{games}) {
+            files.append(1, '<');
+            files.append(to_string(cnt));
+            cnt++;
+            files.append("> ");
+            string file = game.path();
+            files += file.substr(9);
+            files.append(1, '\n');
+          }
+          tfiles.setString(files);
+        }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
           position = Position(1);
           resetBoard(position);
-          game.open(lastGame, std::ios::trunc);
+          game.open(actGame, std::ios::trunc);
           if (!game.is_open()) {
             game.clear();
-            game.open(lastGame, std::ios::out); // create file
+            game.open(actGame, std::ios::out); // create file
             game.close();
-            game.open(lastGame);
+            game.open(actGame);
           }
           bActive.setFillColor(sf::Color::Black);
           wActive.setFillColor(sf::Color::White);
-          mi[2].position = sf::Vector2f(750.f - position.eval*3.f, 80.f);
-          mi[3].position = sf::Vector2f(750.f - position.eval*3.f, 100.f);
+          mi[2].position = sf::Vector2f(750.f, 80.f);
+          mi[3].position = sf::Vector2f(750.f, 100.f);
           mvb.setFillColor(sf::Color(200, 200, 0, 200));
           mvi.setString("");
           wTime = 0;
@@ -387,7 +422,101 @@ int main() {
             }
           }
         }
-      } // end play mode
+      }
+      // analyze mode
+      if (position.gamestate == 2) {
+        // load game file
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num0) && load) {
+          actGame = getGame(0, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1) && load) {
+          actGame = getGame(1, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2) && load) {
+          actGame = getGame(2, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num3) && load) {
+          actGame = getGame(3, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num4) && load) {
+          actGame = getGame(4, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num5) && load) {
+          actGame = getGame(5, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num6) && load) {
+          actGame = getGame(6, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num7) && load) {
+          actGame = getGame(7, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num8) && load) {
+          actGame = getGame(8, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num9) && load) {
+          actGame = getGame(9, games);
+          if (exists(actGame) && is_regular_file(actGame)) {
+            game.open(actGame);
+            load = false;
+          } else {
+            itt.setString("file not found");
+          }
+        }
+      } // end analyze mode
     } // end event loop
 
     // set timer
@@ -404,28 +533,56 @@ int main() {
 
     // draw display
     // timer
-    string timer = "";
-    if (position.player) {
-      window.draw(wActive);
-      timer = getTime(wTime);
-      wTimer.setString(timer);
-    } else {
-      window.draw(bActive);
-      timer = getTime(bTime);
-      bTimer.setString(timer);
-    }
-    if (position.checkmate.first != -1) {
+    if (position.gamestate == 1) {
+      string timer = "";
       if (position.player) {
-        bActive.setFillColor(sf::Color(200, 0, 0));
-        window.draw(bActive);
-      } else {
-        wActive.setFillColor(sf::Color(200, 0, 0));
         window.draw(wActive);
+        timer = getTime(wTime);
+        wTimer.setString(timer);
+      } else {
+        window.draw(bActive);
+        timer = getTime(bTime);
+        bTimer.setString(timer);
       }
+      if (position.checkmate.first != -1) {
+        if (position.player) {
+          bActive.setFillColor(sf::Color(200, 0, 0));
+          window.draw(bActive);
+        } else {
+          wActive.setFillColor(sf::Color(200, 0, 0));
+          window.draw(wActive);
+        }
+      }
+      window.draw(wTimer);
+      window.draw(bTimer);
     }
-    window.draw(wTimer);
-    window.draw(bTimer);
     window.draw(hisb);
+    // fill history for analyze mode
+    if (position.gamestate == 2 && !loaded && !load) {
+      mvb.setFillColor(sf::Color(200, 200, 0, 200));
+      mvi.setString("");
+      mb[0].color = sf::Color::White;
+      mb[1].color = sf::Color::White;
+      mb[2].color = sf::Color::Black;
+      mb[3].color = sf::Color::White;
+      mb[4].color = sf::Color::Black;
+      mb[5].color = sf::Color::Black;
+      mi[2].position = sf::Vector2f(750.f, 80.f);
+      mi[3].position = sf::Vector2f(750.f, 100.f);
+      mi[2].color = sf::Color::Black;
+      mi[3].color = sf::Color::Black;
+      history.clear();
+      string line;
+      while (getline(game, line)) {
+        history += line;
+        history.append(1, '\n');
+      }
+      hist.setString(history);
+      string info = "loaded ";
+      info += actGame.filename();
+      itt.setString(info);
+      loaded = true;
+    }
     // made move
     if (moved) {
       draw = false;
@@ -433,13 +590,13 @@ int main() {
       if (position.mvCount % 2 == 0) { // update after move completed
         position.evaluate();
         eval = position.eval;
-        if (eval > 10.0) {
+        if (eval >= 10.0) {
           eval = 10.f;
           mb[2].color = sf::Color(200, 0, 0, 200);
           mb[4].color = sf::Color(200, 0, 0, 200);
           mb[5].color = sf::Color(200, 0, 0, 200);
         }
-        if (eval < -10.0) {
+        if (eval <= -10.0) {
           eval = -10.f;
           mb[0].color = sf::Color(200, 0, 0, 200);
           mb[1].color = sf::Color(200, 0, 0, 200);
@@ -599,7 +756,13 @@ int main() {
         welcome.setString(restart);
       }
       window.draw(welcome);
-    } // end splash screen
+    }
+
+    // file loader
+    if (position.gamestate == 2 && load) {
+      window.draw(bloader);
+      window.draw(tfiles);
+    }
 
     // display frame
     window.display();

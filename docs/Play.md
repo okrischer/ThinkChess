@@ -783,12 +783,12 @@ the compiler will create the most efficient machine code possible.
 
 By the way, if you want to compile the project in release mode with
 optimization enabled, you can call
-`<cmake .. -DCMAKE_BUILD_TYPE=Release>` from the `build` directory,
-followed by `<cmake -build .>`.\
+`cmake .. -DCMAKE_BUILD_TYPE=Release`{.zsh} from the `build` directory,
+followed by `cmake -build .`{.zsh}.\
 This will recompile the whole project, and every time, you call `cmake`
 after that, the project will be compiled in release mode, unless you
 decide to delete the build directory and re-create it with
-`cmake -B build` from the root folder.
+`cmake -B build`{.zsh} from the root folder.
 
 Having `castling` in place, we can use it inside our `makeMove`
 function:
