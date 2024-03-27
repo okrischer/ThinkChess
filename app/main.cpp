@@ -37,6 +37,15 @@ int main() {
   // content of moves history
   string history;
 
+  // current line from history
+  string move;
+
+  // wether end of game has reached
+  bool eog = false;
+
+  // wether there is a black move
+  bool black = true;
+
   // indicates whether a move was successful
   bool moved = false;
 
@@ -225,6 +234,11 @@ int main() {
   bcb.setFillColor(sf::Color(220, 220, 220));
   bcb.move(0.f, 30.f);
 
+  // background for current move in history
+  sf::RectangleShape bcm(sf::Vector2f(140.f, 14.f));
+  bcm.setFillColor(sf::Color(0, 200, 0, 100));
+  bcm.setPosition(670.f, 231.f);
+
   // infotext
   sf::RectangleShape bit(sf::Vector2f(210.f, 25.f));
   bit.setFillColor(sf::Color(30, 30, 30, 200));
@@ -242,7 +256,7 @@ int main() {
   sf::CircleShape bActive(10.f);
   bActive.setPosition(650.f, 45.f);
   bActive.setFillColor(sf::Color::Black);
-  
+
   // current move background
   sf::RectangleShape mvb(sf::Vector2f(120.f, 20.f));
   mvb.setFillColor(sf::Color(200, 200, 0, 200));
@@ -281,6 +295,9 @@ int main() {
       if (position.gamestate == 0) {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::L)) {
           load = true;
+          loaded = false;
+          eog = false;
+          black = true;
           position = Position(2);
           resetBoard(position);
           string files;
@@ -516,6 +533,41 @@ int main() {
             itt.setString("file not found");
           }
         }
+        // move forward
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::F) && !moved) {
+          string hm;
+          if (position.mvCount % 2 == 0) {
+            if (getline(game, move)) {
+              auto n = move.find(' ');
+              if (string::npos == n) {
+                itt.setString("reached end of game");
+                eog = true;
+              } else {
+                auto m = move.find(' ', n+1);
+                if (string::npos == m || m == move.size()-1) {
+                  hm = move.substr(n+1, m-n-1);
+                  black = false;
+                } else {
+                  hm = move.substr(n+1, m-n-1);
+                  move = move.substr(m+1);
+                }
+              }
+            } else {
+              itt.setString("reached end of game");
+              eog = true;
+            }
+          } else {
+            if (black) {
+              hm = move;
+            } else {
+              itt.setString("reached end of game");
+              eog = true;
+            }
+          }
+          if (!eog) {
+            moved = position.makeNext(hm);
+          }
+        }
       } // end analyze mode
     } // end event loop
 
@@ -556,7 +608,9 @@ int main() {
       window.draw(wTimer);
       window.draw(bTimer);
     }
+
     window.draw(hisb);
+
     // fill history for analyze mode
     if (position.gamestate == 2 && !loaded && !load) {
       mvb.setFillColor(sf::Color(200, 200, 0, 200));
@@ -581,8 +635,11 @@ int main() {
       string info = "loaded ";
       info += actGame.filename();
       itt.setString(info);
+      game.close();
+      game.open(actGame);
       loaded = true;
     }
+
     // made move
     if (moved) {
       draw = false;
@@ -612,6 +669,7 @@ int main() {
           mi[3].color = sf::Color::Black;
         }
       }
+
       // current move
       position.mvCount > 0 ? mvi.setString(position.moves.back())
                            : mvi.setString("");
@@ -620,6 +678,8 @@ int main() {
       position.checked = false;
       position.info.clear();
       itt.setString("");
+    }
+    if (position.gamestate == 1 && moved) {
       // write to game file and to moves history
       if (position.mvCount % 2 == 0) {
         game << position.moves.back() << "\n";
@@ -640,9 +700,28 @@ int main() {
       hist.setString(history);
       moved = false;
     }
+    // draw components in analyze mode
+    if (position.gamestate == 2) {
+      int offset = position.mvCount / 2;
+      bcm.setPosition(670.f, 231.f + offset * 14.f);
+      window.draw(bcm);
+      moved = false;
+    }
+
     window.draw(mb);
     window.draw(mi);
     window.draw(hist);
+    if (position.checkmate.first != -1) {
+      mvb.setFillColor(sf::Color(200, 0, 0));
+    }
+    window.draw(mvb);
+    window.draw(mvi);
+
+    // infotext
+    window.draw(bit);
+    if (!position.info.empty()) itt.setString(position.info);
+    window.draw(itt);
+
     // captured pieces
     window.draw(bcw);
     window.draw(bcb);
@@ -680,16 +759,7 @@ int main() {
       }
       window.draw(cp);
     }
-    // current move
-    if (position.checkmate.first != -1) {
-      mvb.setFillColor(sf::Color(200, 0, 0));
-    }
-    window.draw(mvb);
-    window.draw(mvi);
-    // infotext
-    window.draw(bit);
-    if (!position.info.empty()) itt.setString(position.info);
-    window.draw(itt);
+
 
     // draw board
     window.draw(bs);
@@ -768,7 +838,7 @@ int main() {
     window.display();
 
     // stop game when checkmate
-    if (position.checkmate.first != -1) {
+    if (position.gamestate == 1 && position.checkmate.first != -1) {
       position.gamestate = 0;
       if (game.is_open()) {
         if (position.player) {

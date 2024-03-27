@@ -238,6 +238,132 @@ public:
     return 'N';
   }
 
+  // make next move from history
+  bool makeNext(string move) {
+    if (move.back() == '+') {
+      checked = true;
+      moves.push_back(move);
+      mvCount++;
+      move.pop_back();
+    } else {
+      checked = false;
+      moves.push_back(move);
+      mvCount++;
+    }
+    if (move.back() == '#') {
+      moves.push_back(move);
+      mvCount++;
+      move.pop_back();
+      vector<int> coords = parseMove(move);
+      checkmate = make_pair(coords[4], coords[3]);
+    }
+    // castling
+    if (move.back() == '0') {
+      char form;
+      move == "0-0" ? form = 'K' : form = 'Q';
+      bool white = (mvCount % 2 == 1);
+      if (white && form == 'K') {
+        board[7][6] = new King(1,7,6);
+        delete board[7][4];
+        board[7][4] = nullptr;
+        board[7][5] = new Rook(1,7,5);
+        delete board[7][7];
+        board[7][7] = nullptr;
+        castled == 0 ? castled = 1 : castled = 3;
+      }
+      if (white && form == 'Q') {
+        board[7][2] = new King(1,7,2);
+        delete board[7][4];
+        board[7][4] = nullptr;
+        board[7][3] = new Rook(1,7,3);
+        delete board[7][0];
+        board[7][0] = nullptr;
+        castled == 0 ? castled = 1 : castled = 3;
+      }
+      if (!white && form == 'K') {
+        board[0][6] = new King(0,0,6);
+        delete board[0][4];
+        board[0][4] = nullptr;
+        board[0][5] = new Rook(0,0,5);
+        delete board[0][7];
+        board[0][7] = nullptr;
+        castled == 0 ? castled = 2 : castled = 3;
+      }
+      if (!white && form == 'Q') {
+        board[0][2] = new King(0,0,2);
+        delete board[0][4];
+        board[0][4] = nullptr;
+        board[0][3] = new Rook(0,0,3);
+        delete board[0][0];
+        board[0][0] = nullptr;
+        castled == 0 ? castled = 2 : castled = 3;
+      }
+      return true;
+    } // end castling
+    // en passant
+    if (move.back() == 'p' && move[move.size()-2] == 'e') {
+      move.pop_back();
+      move.pop_back();
+      vector<int> coords = parseMove(move);
+      auto from = board[coords[1]][coords[0]];
+      if (!from) {
+        info = "no piece to move";
+        moves.pop_back();
+        mvCount--;
+        return false;
+      }
+      bool white = (mvCount % 2 == 1);
+      Piece* cp;
+      if (white) {
+        cp = board[coords[4]+1][coords[3]];
+        board[coords[4]+1][coords[3]] = nullptr;
+      } else {
+        cp = board[coords[4]-1][coords[3]];
+        board[coords[4]-1][coords[3]] = nullptr;
+      }
+      if (cp) {
+        captured.push_back(cp);
+      } else {
+        info = "no piece to capture";
+        moves.pop_back();
+        mvCount--;
+        return false;
+      }
+      board[coords[4]][coords[3]] = from;
+      from->makeMove(coords[4], coords[3]);
+      board[coords[1]][coords[0]] = nullptr;
+      return true;
+    } // end en passant
+    vector<int> coords = parseMove(move);
+    auto from = board[coords[1]][coords[0]];
+    if (!from) {
+      info = "no piece to move";
+      moves.pop_back();
+      mvCount--;
+      return false;
+    }
+    auto to = board[coords[4]][coords[3]];
+    if (coords[2]) { // capture
+      if (to) {
+        captured.push_back(to);
+      } else {
+        info = "no piece to capture";
+        moves.pop_back();
+        mvCount--;
+        return false;
+      }
+    }
+    // promotion
+    if (move.back() == 'Q') {
+      bool white = coords[4] == 0;
+      from = new Queen(white, coords[4], coords[3]);
+    }
+    board[coords[4]][coords[3]] = from;
+    from->makeMove(coords[4], coords[3]);
+    board[coords[1]][coords[0]] = nullptr;
+    return true;
+  }
+
   // take back last move
   bool takeBackMove() {
     string move;
